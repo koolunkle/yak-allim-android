@@ -171,7 +171,7 @@ class OcrViewModel @Inject constructor(
                     progressState = OcrProgressState(
                         jobStatus = JobStatus.ENQUEUED,
                         progress = 3,
-                        message = "이미지를 서버에 업로드하는 중입니다...",
+                        message = context.getString(R.string.ocr_status_uploading),
                         isSseActive = true
                     )
                 )
@@ -205,8 +205,7 @@ class OcrViewModel @Inject constructor(
             _uiState.update { state ->
                 state.copy(
                     progressState = state.progressState?.copy(
-                        progress = 5,
-                        message = "요청이 접수되었습니다. 대기 중입니다..."
+                        progress = 5
                     )
                 )
             }
@@ -247,7 +246,7 @@ class OcrViewModel @Inject constructor(
                     state.copy(
                         progressState = state.progressState?.copy(
                             isSseActive = false,
-                            message = "네트워크 연결 불안정... 분석 완료 알림을 기다리는 중입니다..."
+                            message = context.getString(R.string.ocr_status_network_unstable)
                         )
                     )
                 }

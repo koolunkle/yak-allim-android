@@ -273,7 +273,7 @@ fun OcrMedicationCard(
                     MedicationInputField(
                         value = durationDays,
                         onValueChange = { durationDays = it },
-                        labelTextResId = R.string.prescription_total_days,
+                        labelTextResId = R.string.prescription_duration_days,
                         unitText = stringResource(R.string.ocr_unit_days),
                         modifier = Modifier.weight(weight = 1f),
                         borderColor = animatedInternalBorderColor,

@@ -174,7 +174,6 @@ class OcrRepositoryImpl @Inject constructor(
                                 JobStatus.FAILED
                             }
                             val isFinished = progressResponse.isFinished
-                                ?: (domainJobStatus == JobStatus.COMPLETED || domainJobStatus == JobStatus.FAILED)
                             trySend(
                                 Progress(
                                     jobStatus = domainJobStatus,

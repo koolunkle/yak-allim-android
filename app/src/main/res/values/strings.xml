@@ -14,6 +14,8 @@
     <string name="ocr_status_analyzing">복약 안내서를 분석하고 있어요</string>
     <string name="ocr_status_subtext">글자를 인식하고 있습니다. 잠시만 기다려 주세요.</string>
     <string name="ocr_status_cancelled">분석 작업이 취소되었습니다.</string>
+    <string name="ocr_status_uploading">이미지를 서버에 업로드하고 있습니다...</string>
+    <string name="ocr_status_network_unstable">네트워크 연결 불안정... 분석 완료 알림을 기다리는 중입니다...</string>
 
     <string name="ocr_btn_gallery_select">갤러리 선택</string>
     <string name="ocr_btn_retry">다시 시도</string>
@@ -33,7 +35,7 @@
 
     <string name="error_timeout">서버 응답 지연으로 분석에 실패했습니다. 잠시 후 다시 시도해 주세요.</string>
     <string name="error_network">인터넷 연결이 원활하지 않습니다. 네트워크 설정을 확인해 주세요.</string>
-    <string name="error_failed_parsing">서버 분석은 완료되었으나 데이터를 처리하는 중 오류가 발생했습니다. 앱을 최신 버전으로 업데이트해 주세요.</string>
+    <string name="error_failed_parsing">서버 분석은 완료되었으나 데이터를 처리하는 중 오류가 발생했습니다.</string>
     <string name="error_failed_proceed">처리 실패: %1$s</string>
     <string name="error_failed_analysis">복약 안내서 분석에 실패했습니다.\n복약 안내서 확인 후 다시 시도해 주세요.</string>
     <string name="error_failed_image_fetched">이미지 파일을 임시 저장 및 불러오는데 실패했습니다.</string>
@@ -44,7 +46,7 @@
 
     <string name="prescription_label">복용 방법 안내</string>
     <string name="prescription_daily_frequency">복용 횟수</string>
-    <string name="prescription_total_days">복용 기간</string>
+    <string name="prescription_duration_days">복용 기간</string>
     <string name="prescription_dosage_per_take">복용량</string>
 
     <string name="alarm_permission_required">지정 시간에 알람을 받으려면 \'알람 및 리마인더\' 권한이 필요합니다. 설정 화면으로 이동합니다.</string>

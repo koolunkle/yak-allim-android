@@ -8,5 +8,5 @@ data class OcrProgressResponse(
     @field:Json(name = "step") val step: String?,
     @field:Json(name = "message") val message: String?,
     @field:Json(name = "progress") val progress: Int?,
-    @field:Json(name = "isFinished") val isFinished: Boolean?
+    @field:Json(name = "isFinished") val isFinished: Boolean
 )
