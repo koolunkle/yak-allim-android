@@ -224,7 +224,13 @@ private fun OcrScreenContent(
             item {
                 Spacer(Modifier.height(8.dp))
                 if (uiState.isLoading) {
-                    OcrLoadingContent(onCancelClick = onCancelAnalysisClick)
+                    val progressState = uiState.progressState ?: OcrProgressState()
+                    OcrLoadingContent(
+                        progress = progressState.progress,
+                        message = progressState.message,
+                        isSseActive = progressState.isSseActive,
+                        onCancelClick = onCancelAnalysisClick
+                    )
                 } else {
                     OcrImageViewer(
                         selectedImageUri = uiState.selectedImageUri,

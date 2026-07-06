@@ -13,6 +13,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
 import javax.inject.Singleton
 
 @Module
@@ -27,6 +28,7 @@ object RepositoryModule {
         firebaseMessagingTokenProvider: FirebaseMessagingTokenProvider,
         ocrLocalDataSource: OcrLocalDataSource,
         moshi: Moshi,
+        @SseClient okHttpClient: OkHttpClient,
         @ApplicationContext context: Context
     ): OcrRepository {
         return OcrRepositoryImpl(
@@ -35,6 +37,7 @@ object RepositoryModule {
             firebaseMessagingTokenProvider,
             ocrLocalDataSource,
             moshi,
+            okHttpClient,
             context
         )
     }

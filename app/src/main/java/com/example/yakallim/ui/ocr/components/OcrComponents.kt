@@ -29,13 +29,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,9 +59,13 @@ import com.example.yakallim.ui.ocr.OcrError
 import com.example.yakallim.ui.theme.HighlightCoral
 import com.example.yakallim.ui.theme.Primary
 import com.example.yakallim.ui.theme.Secondary
+import kotlinx.coroutines.delay
 
 @Composable
 fun OcrLoadingContent(
+    progress: Int,
+    message: String,
+    isSseActive: Boolean,
     onCancelClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,6 +75,34 @@ fun OcrLoadingContent(
         iterations = LottieConstants.IterateForever,
         speed = 0.5f
     )
+
+    val targetProgress = progress / 100f
+    var displayedProgress by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(targetProgress, isSseActive) {
+        val startProgress = displayedProgress
+        if (targetProgress > startProgress) {
+            val steps = 30
+            val delayTime = 300L / steps
+            val increment = (targetProgress - startProgress) / steps
+            (1..steps).forEach { _ ->
+                displayedProgress += increment
+                delay(delayTime)
+            }
+            displayedProgress = targetProgress
+        } else {
+            displayedProgress = targetProgress
+        }
+
+        if (targetProgress < 1f && isSseActive) {
+            while (true) {
+                delay(1000)
+                if (displayedProgress < 0.95f) {
+                    displayedProgress = (displayedProgress + 0.01f).coerceAtMost(0.95f)
+                }
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -81,7 +118,7 @@ fun OcrLoadingContent(
         )
         Spacer(modifier = Modifier.height(height = 32.dp))
         Text(
-            text = stringResource(R.string.ocr_status_analyzing),
+            text = message.ifEmpty { stringResource(R.string.ocr_status_analyzing) },
             color = Primary,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center,
@@ -89,12 +126,23 @@ fun OcrLoadingContent(
         )
         Spacer(modifier = Modifier.height(height = 12.dp))
         Text(
-            text = stringResource(R.string.ocr_status_subtext),
+            text = if (displayedProgress > 0f) "${(displayedProgress * 100).toInt()}%" else stringResource(R.string.ocr_status_subtext),
             modifier = Modifier.padding(horizontal = 40.dp),
             color = Primary.copy(alpha = 0.6f),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium
         )
+        if (displayedProgress > 0f) {
+            Spacer(modifier = Modifier.height(height = 16.dp))
+            LinearProgressIndicator(
+                progress = { displayedProgress },
+                modifier = Modifier
+                    .width(180.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = HighlightCoral,
+                trackColor = Primary.copy(alpha = 0.1f)
+            )
+        }
         Spacer(modifier = Modifier.height(height = 48.dp))
         TextButton(
             onClick = onCancelClick,

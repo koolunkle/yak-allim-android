@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.yakallim.R
 import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingObserver
-import com.example.yakallim.domain.model.JobStatus
 import com.example.yakallim.domain.infrastructure.image.ImageProcessor
 import com.example.yakallim.domain.usecase.RequestPrescriptionUseCase
 import com.example.yakallim.domain.usecase.CancelAlarmUseCase
@@ -19,6 +18,8 @@ import com.example.yakallim.domain.usecase.GetPrescriptionResultUseCase
 import com.example.yakallim.domain.usecase.GetLastPrescriptionUseCase
 import com.example.yakallim.domain.usecase.GetPendingPrescriptionUseCase
 import com.example.yakallim.domain.usecase.ScheduleAlarmUseCase
+import com.example.yakallim.domain.usecase.ObserveProgressUseCase
+import com.example.yakallim.domain.model.JobStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -44,6 +45,7 @@ class OcrViewModel @Inject constructor(
     private val scheduleAlarmUseCase: ScheduleAlarmUseCase,
     private val cancelAlarmUseCase: CancelAlarmUseCase,
     private val cancelPrescriptionUseCase: CancelPrescriptionUseCase,
+    private val observeProgressUseCase: ObserveProgressUseCase,
     private val imageProcessor: ImageProcessor,
     private val firebaseMessagingObserver: FirebaseMessagingObserver,
     @param:ApplicationContext private val context: Context
@@ -133,7 +135,8 @@ class OcrViewModel @Inject constructor(
                 error = null,
                 selectedImageUri = null,
                 capturedImageBitmap = null,
-                cardExpansionMap = emptyMap()
+                cardExpansionMap = emptyMap(),
+                progressState = null
             )
         }
     }
@@ -154,7 +157,20 @@ class OcrViewModel @Inject constructor(
         activeJobId = null
         job?.cancel()
         job = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null, analysisResult = null, cardExpansionMap = emptyMap()) }
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    error = null,
+                    analysisResult = null,
+                    cardExpansionMap = emptyMap(),
+                    progressState = OcrProgressState(
+                        jobStatus = JobStatus.ENQUEUED,
+                        progress = 3,
+                        message = "이미지를 서버에 업로드하는 중입니다...",
+                        isSseActive = true
+                    )
+                )
+            }
 
             val file = currentState.selectedImageUri?.let { imageProcessor.uriToFile(it) }
                 ?: currentState.capturedImageBitmap?.let { imageProcessor.bitmapToFile(it) }
@@ -181,27 +197,77 @@ class OcrViewModel @Inject constructor(
                 return@launch
             }
 
-            val firebaseMessage = try {
-                firebaseMessagingObserver.messages.filter { it.jobId == jobId }
-                    .first()
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.toOcrError()
+            _uiState.update { state ->
+                state.copy(
+                    progressState = state.progressState?.copy(
+                        progress = 5,
+                        message = "요청이 접수되었습니다. 대기 중입니다..."
                     )
-                }
-                return@launch
+                )
             }
 
-            if (firebaseMessage.status == JobStatus.COMPLETED) {
-                fetchAnalysisResult(jobId)
-            } else {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = if (firebaseMessage.errorMessage != null) OcrError.ServerError(firebaseMessage.errorMessage) else OcrError.AnalysisFailed
+            var isOcrCompleted = false
+            try {
+                observeProgressUseCase(jobId).collect { progress ->
+                    _uiState.update { state ->
+                        state.copy(
+                            progressState = state.progressState?.copy(
+                                jobStatus = progress.jobStatus,
+                                progress = progress.percent,
+                                message = progress.message
+                            )
+                        )
+                    }
+                    if (progress.isFinished) {
+                        isOcrCompleted = true
+                        if (progress.jobStatus == JobStatus.COMPLETED) {
+                            fetchAnalysisResult(jobId)
+                        } else {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = OcrError.AnalysisFailed
+                                )
+                            }
+                        }
+                        throw CancellationException("Progress finished")
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+            }
+
+            if (!isOcrCompleted) {
+                _uiState.update { state ->
+                    state.copy(
+                        progressState = state.progressState?.copy(
+                            isSseActive = false,
+                            message = "네트워크 연결 불안정... 분석 완료 알림을 기다리는 중입니다..."
+                        )
                     )
+                }
+                val firebaseMessage = try {
+                    firebaseMessagingObserver.messages.filter { it.jobId == jobId }
+                        .first()
+                } catch (ex: Exception) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = ex.toOcrError()
+                        )
+                    }
+                    return@launch
+                }
+
+                if (firebaseMessage.status == JobStatus.COMPLETED) {
+                    fetchAnalysisResult(jobId)
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = if (firebaseMessage.errorMessage != null) OcrError.ServerError(firebaseMessage.errorMessage) else OcrError.AnalysisFailed
+                        )
+                    }
                 }
             }
         }
@@ -315,7 +381,8 @@ class OcrViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isLoading = false,
-                error = OcrError.Unknown(context.getString(R.string.ocr_status_cancelled))
+                error = OcrError.Unknown(context.getString(R.string.ocr_status_cancelled)),
+                progressState = null
             )
         }
     }

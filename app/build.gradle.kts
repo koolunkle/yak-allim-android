@@ -99,6 +99,7 @@ dependencies {
     implementation(libs.retrofit.converter.moshi)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging)
+    implementation(libs.okhttp.sse)
     implementation(libs.moshi.core)
     ksp(libs.moshi.kotlin.codegen)
 

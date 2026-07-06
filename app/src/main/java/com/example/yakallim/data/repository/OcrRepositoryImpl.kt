@@ -2,27 +2,38 @@ package com.example.yakallim.data.repository
 
 import android.content.Context
 import android.util.Log
+import com.example.yakallim.BuildConfig
 import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.data.datasource.remote.api.OcrApiService
+import com.example.yakallim.data.datasource.remote.dto.OcrProgressResponse
+import com.example.yakallim.data.datasource.remote.dto.OcrResponse
 import com.example.yakallim.data.mapper.toDomain
 import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingTokenProvider
 import com.example.yakallim.domain.infrastructure.image.ImageProcessor
+import com.example.yakallim.domain.model.JobStatus
 import com.example.yakallim.domain.model.Prescription
+import com.example.yakallim.domain.model.Progress
 import com.example.yakallim.domain.repository.OcrRepository
+import com.squareup.moshi.Moshi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import okhttp3.sse.EventSource
+import okhttp3.sse.EventSourceListener
+import okhttp3.sse.EventSources
 import java.io.File
 import javax.inject.Inject
-import com.squareup.moshi.Moshi
-import com.example.yakallim.data.datasource.remote.dto.OcrResponse
 
 class OcrRepositoryImpl @Inject constructor(
     private val apiService: OcrApiService,
@@ -30,6 +41,7 @@ class OcrRepositoryImpl @Inject constructor(
     private val firebaseMessagingTokenProvider: FirebaseMessagingTokenProvider,
     private val ocrLocalDataSource: OcrLocalDataSource,
     private val moshi: Moshi,
+    private val okHttpClient: OkHttpClient,
     @param:ApplicationContext private val context: Context
 ) : OcrRepository {
 
@@ -52,7 +64,7 @@ class OcrRepositoryImpl @Inject constructor(
             val ocrJob = apiService.getOcrJob(jobId)
             val ocrJobResult = ocrJob.result
                 ?: throw NoSuchElementException("OCR job [${ocrJob.jobId}] completed, but the result data is missing.")
-            
+
             try {
                 val adapter = moshi.adapter(OcrResponse::class.java)
                 val json = adapter.toJson(ocrJobResult)
@@ -125,6 +137,76 @@ class OcrRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("OcrRepositoryImpl", "마지막 캐시 이미지 삭제 실패: ${e.message}")
+        }
+    }
+
+    override fun observeOcrProgress(jobId: String): Flow<Progress> = callbackFlow {
+        val request = okhttp3.Request.Builder()
+            .url("${BuildConfig.BASE_URL}api/v1/ocr/jobs/$jobId/progress")
+            .header("Accept", "text/event-stream")
+            .build()
+
+        val factory = EventSources.createFactory(okHttpClient)
+        val eventSource = factory.newEventSource(request, object : EventSourceListener() {
+            override fun onOpen(eventSource: EventSource, response: Response) {
+            }
+
+            override fun onEvent(
+                eventSource: EventSource,
+                id: String?,
+                type: String?,
+                data: String
+            ) {
+                Log.d(
+                    "OcrRepositoryImpl",
+                    "Received SSE event: type=$type, data=$data"
+                )
+                if (type == null || type == "progress" || type == "message") {
+                    try {
+                        val adapter = moshi.adapter(OcrProgressResponse::class.java)
+                        val progressResponse = adapter.fromJson(data)
+                        if (progressResponse != null) {
+                            val stepStr = progressResponse.step ?: ""
+                            val domainJobStatus = try {
+                                JobStatus.valueOf(stepStr)
+                            } catch (_: IllegalArgumentException) {
+                                JobStatus.FAILED
+                            }
+                            val isFinished = progressResponse.isFinished
+                                ?: (domainJobStatus == JobStatus.COMPLETED || domainJobStatus == JobStatus.FAILED)
+                            trySend(
+                                Progress(
+                                    jobStatus = domainJobStatus,
+                                    message = progressResponse.message ?: "",
+                                    percent = progressResponse.progress ?: 0,
+                                    isFinished = isFinished
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e(
+                            "OcrRepositoryImpl",
+                            "Failed to parse SSE data: ${e.message}"
+                        )
+                    }
+                }
+            }
+
+            override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
+                Log.e(
+                    "OcrRepositoryImpl",
+                    "SSE failed: ${t?.message}, response=$response"
+                )
+                close(t ?: RuntimeException("SSE connection failed"))
+            }
+
+            override fun onClosed(eventSource: EventSource) {
+                close()
+            }
+        })
+
+        awaitClose {
+            eventSource.cancel()
         }
     }
 }
