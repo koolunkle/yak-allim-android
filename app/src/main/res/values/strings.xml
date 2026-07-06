@@ -1,0 +1,77 @@
+<resources>
+    <string name="app_name">Yak-Allim</string>
+
+    <string name="common_confirm">확인</string>
+    <string name="common_cd_warning_icon">경고 표시 아이콘</string>
+    <string name="common_cd_toggle_icon">토글 표시 아이콘</string>
+
+    <string name="camera_permission_required">카메라 권한이 필요합니다.</string>
+    <string name="camera_btn_capture">카메라 촬영</string>
+    <string name="camera_cd_close">카메라 화면 닫기</string>
+    <string name="camera_cd_prescription">카메라로 촬영한 복약 안내서</string>
+
+    <string name="ocr_status_placeholder">분석할 복약 안내서를 등록해주세요.</string>
+    <string name="ocr_status_analyzing">복약 안내서를 분석하고 있어요</string>
+    <string name="ocr_status_subtext">글자를 인식하고 있습니다. 잠시만 기다려 주세요.</string>
+    <string name="ocr_status_cancelled">분석 작업이 취소되었습니다.</string>
+
+    <string name="ocr_btn_gallery_select">갤러리 선택</string>
+    <string name="ocr_btn_retry">다시 시도</string>
+    <string name="ocr_btn_start">분석 시작</string>
+    <string name="ocr_btn_cancel">분석 취소</string>
+    <string name="ocr_btn_image_change">다른 이미지로 분석하기</string>
+    <string name="ocr_btn_image_expand">전체 확대</string>
+    <string name="ocr_btn_image_collapse">전체 축소</string>
+
+    <string name="ocr_unit_tablet">정</string>
+    <string name="ocr_unit_capsule">캡슐</string>
+    <string name="ocr_unit_times">회</string>
+    <string name="ocr_unit_days">일</string>
+
+    <string name="ocr_cd_upload_icon">업로드 표시 아이콘</string>
+    <string name="ocr_cd_prescription">갤러리에서 선택한 복약 안내서</string>
+
+    <string name="error_timeout">서버 응답 지연으로 분석에 실패했습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="error_network">인터넷 연결이 원활하지 않습니다. 네트워크 설정을 확인해 주세요.</string>
+    <string name="error_failed_parsing">서버 분석은 완료되었으나 데이터를 처리하는 중 오류가 발생했습니다. 앱을 최신 버전으로 업데이트해 주세요.</string>
+    <string name="error_failed_proceed">처리 실패: %1$s</string>
+    <string name="error_failed_analysis">복약 안내서 분석에 실패했습니다.\n복약 안내서 확인 후 다시 시도해 주세요.</string>
+    <string name="error_failed_image_fetched">이미지 파일을 임시 저장 및 불러오는데 실패했습니다.</string>
+    <string name="error_failed_image_selected">분석할 이미지를 먼저 선택하거나 촬영해 주세요.</string>
+    <string name="error_low_confidence">인식 신뢰도가 낮습니다. 복용법을 직접 확인하세요.</string>
+    <string name="error_unknown_medicine">알 수 없는 약품</string>
+    <string name="error_cd_icon">오류 표시 아이콘</string>
+
+    <string name="prescription_label">복용 방법 안내</string>
+    <string name="prescription_daily_frequency">복용 횟수</string>
+    <string name="prescription_total_days">복용 기간</string>
+    <string name="prescription_dosage_per_take">복용량</string>
+
+    <string name="alarm_permission_required">지정 시간에 알람을 받으려면 \'알람 및 리마인더\' 권한이 필요합니다. 설정 화면으로 이동합니다.</string>
+    <string name="alarm_permission_denied">알림을 받으시려면 설정에서 알림 권한을 허용해주세요.</string>
+    <string name="alarm_btn_register">알람 등록</string>
+    <string name="alarm_btn_unregister">알람 해제</string>
+    <string name="alarm_card_format">하루 %1$d회, %2$d일간 복용\n(1회 %3$s 복용)</string>
+
+    <string name="alarm_channel_name">복약 알람 채널</string>
+    <string name="alarm_channel_desc">복약 지침에 따른 복용 알람을 발송합니다.</string>
+
+    <string name="alarm_content_title_format">[복약 알람] %1$s</string>
+    <string name="alarm_content_text">약품 복용할 시간입니다.</string>
+    <string name="alarm_big_text_format">약품 복용할 시간입니다.\n%1$s</string>
+
+    <string name="notification_fcm_channel_name">복약 안내서 분석 알림</string>
+    <string name="notification_fcm_completed_title">분석 완료</string>
+    <string name="notification_fcm_completed_body">복약 안내서 분석이 완료되었습니다. 확인하려면 탭하세요.</string>
+    <string name="notification_fcm_failed_title">분석 실패</string>
+    <string name="notification_fcm_failed_body">복약 안내서 분석에 실패했습니다.</string>
+
+    <string name="help_title_guide">도움말 가이드</string>
+    <string name="help_title_ocr">복약 안내 가이드</string>
+
+    <string name="help_item_analysis_title">복약 안내서 등록 및 분석</string>
+    <string name="help_item_analysis_desc">카메라 촬영 혹은 갤러리 선택을 통해 복약 안내서 이미지를 등록하고 분석을 진행합니다.</string>
+
+    <string name="help_item_alarm_title">복약 알람 생성</string>
+    <string name="help_item_alarm_desc">분석 결과를 바탕으로 복용 횟수와 복용일에 맞추어 복약 알람을 등록할 수 있습니다.</string>
+</resources>

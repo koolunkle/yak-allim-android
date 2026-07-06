@@ -1,0 +1,367 @@
+package com.example.yakallim.ui.ocr
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.yakallim.R
+import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingObserver
+import com.example.yakallim.domain.model.JobStatus
+import com.example.yakallim.domain.infrastructure.image.ImageProcessor
+import com.example.yakallim.domain.usecase.RequestPrescriptionUseCase
+import com.example.yakallim.domain.usecase.CancelAlarmUseCase
+import com.example.yakallim.domain.usecase.CancelPrescriptionUseCase
+import com.example.yakallim.domain.usecase.ClearLastPrescriptionUseCase
+import com.example.yakallim.domain.usecase.GetActiveAlarmsUseCase
+import com.example.yakallim.domain.usecase.GetPrescriptionResultUseCase
+import com.example.yakallim.domain.usecase.GetLastPrescriptionUseCase
+import com.example.yakallim.domain.usecase.GetPendingPrescriptionUseCase
+import com.example.yakallim.domain.usecase.ScheduleAlarmUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import java.io.File
+import javax.inject.Inject
+
+@HiltViewModel
+class OcrViewModel @Inject constructor(
+    private val requestPrescriptionUseCase: RequestPrescriptionUseCase,
+    private val getPrescriptionResultUseCase: GetPrescriptionResultUseCase,
+    private val getPendingPrescriptionUseCase: GetPendingPrescriptionUseCase,
+    private val getActiveAlarmsUseCase: GetActiveAlarmsUseCase,
+    private val getLastPrescriptionUseCase: GetLastPrescriptionUseCase,
+    private val clearLastPrescriptionUseCase: ClearLastPrescriptionUseCase,
+    private val scheduleAlarmUseCase: ScheduleAlarmUseCase,
+    private val cancelAlarmUseCase: CancelAlarmUseCase,
+    private val cancelPrescriptionUseCase: CancelPrescriptionUseCase,
+    private val imageProcessor: ImageProcessor,
+    private val firebaseMessagingObserver: FirebaseMessagingObserver,
+    @param:ApplicationContext private val context: Context
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(OcrUiState())
+    val uiState: StateFlow<OcrUiState> = _uiState.asStateFlow()
+
+    private var job: Job? = null
+    private var fetchJob: Job? = null
+    private var activeJobId: String? = null
+
+    init {
+        viewModelScope.launch {
+            recoverActiveJob()
+            recoverActiveAlarms()
+            _uiState.update { it.copy(isInitialized = true) }
+        }
+    }
+
+    private suspend fun recoverActiveJob() {
+        val jobId = getPendingPrescriptionUseCase()
+        if (!jobId.isNullOrBlank() && jobId != activeJobId) {
+            activeJobId = jobId
+            fetchAnalysisResult(jobId)
+        } else if (jobId.isNullOrBlank()) {
+            recoverLastPrescription()
+        }
+    }
+
+    private suspend fun recoverActiveAlarms() {
+        val activeAlarms = getActiveAlarmsUseCase()
+        _uiState.update {
+            it.copy(registeredAlarmMedicineNames = activeAlarms)
+        }
+    }
+
+    private suspend fun recoverLastPrescription() {
+        val lastPrescription = getLastPrescriptionUseCase()
+        if (lastPrescription != null) {
+            val cacheFile = File(context.cacheDir, "ocr_image_last.jpg")
+            val restoredUri = if (cacheFile.exists()) Uri.fromFile(cacheFile) else null
+            _uiState.update { state ->
+                val initialExpanded = lastPrescription.medications.associate { med ->
+                    (med.medicineName ?: context.getString(R.string.error_unknown_medicine)) to false
+                }
+                state.copy(
+                    analysisResult = lastPrescription,
+                    selectedImageUri = restoredUri,
+                    cardExpansionMap = initialExpanded
+                )
+            }
+        }
+    }
+
+    fun handleIntent(intent: Intent?) {
+        val jobId = intent?.getStringExtra(OcrExtraSpec.KEY_JOB_ID)
+        if (!jobId.isNullOrBlank() && jobId != activeJobId) {
+            activeJobId = jobId
+            fetchAnalysisResult(jobId)
+        }
+    }
+
+    fun onImageSelected(uri: Uri) {
+        stopActiveAnalysis()
+        _uiState.update {
+            it.copy(selectedImageUri = uri, capturedImageBitmap = null, analysisResult = null, error = null)
+        }
+    }
+
+    fun onImageCaptured(bitmap: Bitmap) {
+        stopActiveAnalysis()
+        _uiState.update {
+            it.copy(capturedImageBitmap = bitmap, selectedImageUri = null, analysisResult = null, error = null)
+        }
+    }
+    fun resetAnalysisResult() {
+        stopActiveAnalysis()
+        activeJobId = null
+        clearAllRegisteredAlarms()
+        viewModelScope.launch {
+            clearLastPrescriptionUseCase()
+        }
+        _uiState.update {
+            it.copy(
+                analysisResult = null,
+                error = null,
+                selectedImageUri = null,
+                capturedImageBitmap = null,
+                cardExpansionMap = emptyMap()
+            )
+        }
+    }
+
+    fun onAnalysisRequested() {
+        val currentState = _uiState.value
+        if (!currentState.hasImage) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    error = OcrError.Unknown(context.getString(R.string.error_failed_image_selected))
+                )
+            }
+            return
+        }
+
+        clearAllRegisteredAlarms()
+        activeJobId = null
+        job?.cancel()
+        job = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null, analysisResult = null, cardExpansionMap = emptyMap()) }
+
+            val file = currentState.selectedImageUri?.let { imageProcessor.uriToFile(it) }
+                ?: currentState.capturedImageBitmap?.let { imageProcessor.bitmapToFile(it) }
+            if (file == null) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = OcrError.Unknown(context.getString(R.string.error_failed_image_fetched))
+                    )
+                }
+                return@launch
+            }
+
+            val jobId = try {
+                requestPrescriptionUseCase(file)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.toOcrError()
+                    )
+                }
+                return@launch
+            }
+
+            val firebaseMessage = try {
+                firebaseMessagingObserver.messages.filter { it.jobId == jobId }
+                    .first()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.toOcrError()
+                    )
+                }
+                return@launch
+            }
+
+            if (firebaseMessage.status == JobStatus.COMPLETED) {
+                fetchAnalysisResult(jobId)
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = if (firebaseMessage.errorMessage != null) OcrError.ServerError(firebaseMessage.errorMessage) else OcrError.AnalysisFailed
+                    )
+                }
+            }
+        }
+    }
+
+    fun retryAnalysis() {
+        val jobId = activeJobId
+        if (!jobId.isNullOrBlank()) {
+            fetchAnalysisResult(jobId)
+        } else {
+            onAnalysisRequested()
+        }
+    }
+
+    fun fetchAnalysisResult(jobId: String) {
+        activeJobId = jobId
+        fetchJob?.cancel()
+        fetchJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            val cacheFile = File(context.cacheDir, "ocr_image_$jobId.jpg")
+            val restoredUri = if (cacheFile.exists()) Uri.fromFile(cacheFile) else null
+
+            getPrescriptionResultUseCase(jobId).collect { result ->
+                result.onSuccess { analysisResult ->
+                    val isValid = analysisResult.medications.isNotEmpty()
+
+                    _uiState.update { state ->
+                        val initialExpanded = if (isValid) {
+                            analysisResult.medications.associate { med ->
+                                (med.medicineName ?: context.getString(R.string.error_unknown_medicine)) to false
+                            }
+                        } else emptyMap()
+                        
+                        state.copy(
+                            isLoading = false,
+                            analysisResult = if (isValid) analysisResult else null,
+                            selectedImageUri = restoredUri ?: state.selectedImageUri,
+                            cardExpansionMap = initialExpanded,
+                            error = if (isValid) null else OcrError.EmptyResult
+                        )
+                    }
+                }.onFailure { exception ->
+                    if (exception is CancellationException) throw exception
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = exception.toOcrError()
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun onAppForeground() {
+        viewModelScope.launch {
+            recoverActiveJob()
+        }
+    }
+
+    fun registerMedicationAlarm(
+        medicineName: String,
+        dosagePerTake: String,
+        dailyFrequency: Int,
+        durationDays: Int,
+        instruction: String,
+    ) {
+        viewModelScope.launch {
+            val isSuccess = try {
+                scheduleAlarmUseCase(medicineName, dosagePerTake, dailyFrequency, durationDays, instruction)
+                true
+            } catch (_: Exception) {
+                false
+            }
+            if (isSuccess) {
+                _uiState.update { state ->
+                    val updatedResult = state.analysisResult?.let { prescription ->
+                        prescription.copy(
+                            medications = prescription.medications.map { medication ->
+                                if ((medication.medicineName ?: context.getString(R.string.error_unknown_medicine)) == medicineName) {
+                                    medication.copy(
+                                        dosagePerTake = dosagePerTake,
+                                        dailyFrequency = dailyFrequency,
+                                        durationDays = durationDays
+                                    )
+                                } else medication
+                            }
+                        )
+                    }
+                    state.copy(
+                        registeredAlarmMedicineNames = state.registeredAlarmMedicineNames + medicineName,
+                        analysisResult = updatedResult
+                    )
+                }
+            }
+        }
+    }
+
+    fun unregisterMedicationAlarm(medicineName: String) {
+        viewModelScope.launch {
+            cancelAlarmUseCase(medicineName)
+            _uiState.update {
+                it.copy(registeredAlarmMedicineNames = it.registeredAlarmMedicineNames - medicineName)
+            }
+        }
+    }
+
+    fun onAnalysisCancelRequested() {
+        stopActiveAnalysis()
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                error = OcrError.Unknown(context.getString(R.string.ocr_status_cancelled))
+            )
+        }
+    }
+
+    fun toggleCardExpansion(medicineName: String) {
+        _uiState.update {
+            val current = it.cardExpansionMap[medicineName] ?: false
+            it.copy(cardExpansionMap = it.cardExpansionMap + (medicineName to !current))
+        }
+    }
+
+    fun setAllCardsExpansion(expanded: Boolean) {
+        _uiState.update { state ->
+            val newExpanded = state.analysisResult?.medications?.associate {
+                (it.medicineName ?: context.getString(R.string.error_unknown_medicine)) to expanded
+            } ?: emptyMap()
+            state.copy(cardExpansionMap = newExpanded)
+        }
+    }
+
+    private fun stopActiveAnalysis() {
+        job?.cancel()
+        viewModelScope.launch {
+            cancelPrescriptionUseCase()
+        }
+    }
+
+    private fun Throwable.toOcrError(): OcrError {
+        val msg = this.localizedMessage ?: ""
+        return when {
+            this is NoSuchElementException -> OcrError.EmptyResult
+            msg.contains("timeout", ignoreCase = true) -> OcrError.Timeout
+            msg.contains("connect", ignoreCase = true) || msg.contains("network", ignoreCase = true) -> OcrError.Network
+            else -> OcrError.Unknown(msg)
+        }
+    }
+
+    private fun clearAllRegisteredAlarms() {
+        val alarms = _uiState.value.registeredAlarmMedicineNames
+        if (alarms.isNotEmpty()) {
+            viewModelScope.launch {
+                alarms.forEach { medicineName ->
+                    cancelAlarmUseCase(medicineName)
+                }
+                _uiState.update { it.copy(registeredAlarmMedicineNames = emptySet()) }
+            }
+        }
+    }
+}

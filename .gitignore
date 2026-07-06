@@ -1,0 +1,31 @@
+# Build & IDE Artifacts
+/build/
+.gradle/
+*.iml
+*.iws
+*.ipr
+/captures/
+.externalNativeBuild/
+.cxx/
+*.bak
+*.swp
+*.patch
+
+# Local Configuration & Secrets
+/local.properties
+/secrets.properties
+.DS_Store
+Thumbs.db
+
+# Android Studio / IntelliJ
+.idea/
+
+# Signing & Release
+*.jks
+*.keystore
+*.p12
+google-services.json
+
+# Logs
+/logs/
+*.log
