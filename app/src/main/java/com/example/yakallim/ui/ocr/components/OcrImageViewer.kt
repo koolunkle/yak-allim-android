@@ -40,8 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.yakallim.R
+import com.example.yakallim.domain.model.Coordinate
 import com.example.yakallim.domain.model.Prescription
-import com.example.yakallim.domain.model.TextBlock
 import com.example.yakallim.ui.theme.Primary
 import com.example.yakallim.ui.theme.Secondary
 import com.example.yakallim.ui.theme.Success
@@ -99,8 +99,8 @@ fun OcrImageViewer(
                     } ?: Pair(1000, 1000)
                 }
 
-                val medications = analysisResult?.medications ?: emptyList()
-                if (medications.any { it.bounds.isNotEmpty() }) {
+                val medicines = analysisResult?.medicines ?: emptyList()
+                if (medicines.any { it.bounds.isNotEmpty() }) {
                     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                         val density = LocalDensity.current
                         val viewW = with(density) { maxWidth.toPx() }
@@ -111,10 +111,10 @@ fun OcrImageViewer(
                                 .fillMaxSize()
                                 .pointerInput(analysisResult) {
                                     detectTapGestures { offset ->
-                                        medications.forEach { med ->
+                                        medicines.forEach { medicine ->
                                             val medicineName =
-                                                med.medicineName ?: unknownMedicineLabel
-                                            med.bounds.forEach { box ->
+                                                medicine.name ?: unknownMedicineLabel
+                                            medicine.bounds.forEach { box ->
                                                 if (getScaledRect(
                                                         box,
                                                         origSize.first,
@@ -130,14 +130,14 @@ fun OcrImageViewer(
                                         }
                                     }
                                 }) {
-                            medications.forEach { medication ->
-                                val medicineName = medication.medicineName ?: unknownMedicineLabel
+                            medicines.forEach { medicine ->
+                                val medicineName = medicine.name ?: unknownMedicineLabel
                                 val isRegistered = registeredAlarmMedicineNames.contains(medicineName)
 
                                 val fillColor = if (isRegistered) Success.copy(0.2f) else Secondary.copy(0.15f)
                                 val borderColor = if (isRegistered) Success.copy(0.6f) else Secondary.copy(0.4f)
 
-                                medication.bounds.forEach { box ->
+                                medicine.bounds.forEach { box ->
                                     val rect = getScaledRect(box, origSize.first, origSize.second, viewW, viewH)
                                     drawRect(color = fillColor, topLeft = rect.topLeft, size = rect.size)
                                     drawRect(color = borderColor, topLeft = rect.topLeft, size = rect.size, style = Stroke(width = 1.5f.dp.toPx()))
@@ -169,7 +169,7 @@ fun OcrImageViewer(
     }
 }
 
-private fun getScaledRect(coordinates: List<TextBlock.Coordinate>, origW: Int, origH: Int, viewW: Float, viewH: Float): Rect {
+private fun getScaledRect(coordinates: List<Coordinate>, origW: Int, origH: Int, viewW: Float, viewH: Float): Rect {
     val minX = coordinates.minOfOrNull { it.x } ?: 0
     val maxX = coordinates.maxOfOrNull { it.x } ?: 0
     val minY = coordinates.minOfOrNull { it.y } ?: 0

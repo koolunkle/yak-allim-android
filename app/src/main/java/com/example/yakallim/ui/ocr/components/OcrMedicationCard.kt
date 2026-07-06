@@ -53,7 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.yakallim.R
-import com.example.yakallim.domain.model.Medication
+import com.example.yakallim.domain.model.Medicine
 import com.example.yakallim.ui.theme.HighlightCoral
 import com.example.yakallim.ui.theme.MintBorder
 import com.example.yakallim.ui.theme.Primary
@@ -66,7 +66,7 @@ import com.example.yakallim.ui.theme.Warning
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun OcrMedicationCard(
-    medicationInfo: Medication,
+    medicineInfo: Medicine,
     isAlarmRegistered: Boolean,
     highlightedMedicineName: String?,
     isCardExpanded: Boolean,
@@ -74,9 +74,9 @@ fun OcrMedicationCard(
     onRegisterAlarmClick: (String, String, Int, Int, String) -> Unit,
     onCancelAlarmClick: (String) -> Unit,
 ) {
-    val medicineName = medicationInfo.medicineName ?: stringResource(R.string.error_unknown_medicine)
+    val medicineName = medicineInfo.name ?: stringResource(R.string.error_unknown_medicine)
     val isHighlighted = highlightedMedicineName == medicineName
-    val isLowConfidence = medicationInfo.isLowConfidence
+    val isLowConfidence = medicineInfo.isLowConfidence
 
     val animatedContainerColor by animateColorAsState(
         targetValue = if (isAlarmRegistered) SuccessContainer else Color.White,
@@ -97,20 +97,20 @@ fun OcrMedicationCard(
         label = "internalBorderColor"
     )
 
-    var dosagePerTake by remember(medicationInfo.medicineName) {
-        mutableStateOf(medicationInfo.dosagePerTake.filter { (it.isDigit() || it == '.') }.ifEmpty { "1" })
+    var dosagePerTake by remember(medicineInfo.name) {
+        mutableStateOf(medicineInfo.dosagePerTake.filter { (it.isDigit() || it == '.') }.ifEmpty { "1" })
     }
     val defaultDosageUnit = stringResource(R.string.ocr_unit_tablet)
-    var dosageUnit by remember(medicationInfo.medicineName) {
-        mutableStateOf(medicationInfo.dosagePerTake.filter { !it.isDigit() && it != '.' }.trim().ifEmpty { defaultDosageUnit })
+    var dosageUnit by remember(medicineInfo.name) {
+        mutableStateOf(medicineInfo.dosagePerTake.filter { !it.isDigit() && it != '.' }.trim().ifEmpty { defaultDosageUnit })
     }
-    var frequency by remember(medicationInfo.medicineName) { mutableStateOf(medicationInfo.dailyFrequency.toString()) }
-    var durationDays by remember(medicationInfo.medicineName) { mutableStateOf(medicationInfo.durationDays.toString()) }
+    var frequency by remember(medicineInfo.name) { mutableStateOf(medicineInfo.dailyFrequency.toString()) }
+    var durationDays by remember(medicineInfo.name) { mutableStateOf(medicineInfo.durationDays.toString()) }
 
     val combinedDescription = stringResource(
         R.string.alarm_card_format,
-        frequency.toIntOrNull() ?: medicationInfo.dailyFrequency,
-        durationDays.toIntOrNull() ?: medicationInfo.durationDays,
+        frequency.toIntOrNull() ?: medicineInfo.dailyFrequency,
+        durationDays.toIntOrNull() ?: medicineInfo.durationDays,
         "${dosagePerTake.ifBlank { "1" }}$dosageUnit"
     )
 

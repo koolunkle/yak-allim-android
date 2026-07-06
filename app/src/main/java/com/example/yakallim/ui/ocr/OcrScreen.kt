@@ -111,7 +111,7 @@ fun OcrScreen(
             checkPermissions(
                 context,
                 { requiredNotificationPermission?.let { notificationLauncher.launch(it) } }) {
-                viewModel.registerMedicationAlarm(
+                viewModel.registerMedicineAlarm(
                     medicineName,
                     dosagePerTake,
                     dailyFrequency,
@@ -141,19 +141,19 @@ fun OcrScreen(
         onStartAnalysisClick = viewModel::retryAnalysis,
         onCancelAnalysisClick = viewModel::onAnalysisCancelRequested,
         onRegisterAlarmClick = onRegisterAlarm,
-        onCancelAlarmClick = viewModel::unregisterMedicationAlarm,
+        onCancelAlarmClick = viewModel::unregisterMedicineAlarm,
         onResetAnalysisClick = viewModel::resetAnalysisResult,
         onMedicineTextClick = { name ->
             val result = uiState.analysisResult
-            val medications = result?.medications ?: emptyList()
+            val medicines = result?.medicines ?: emptyList()
             val matchedMedication =
-                medications.find { (it.medicineName ?: unknownMedicineLabel) == name }
-            highlightedMedicineName.value = matchedMedication?.medicineName ?: unknownMedicineLabel
+                medicines.find { (it.name ?: unknownMedicineLabel) == name }
+            highlightedMedicineName.value = matchedMedication?.name ?: unknownMedicineLabel
 
-            val index = medications.indexOf(matchedMedication)
+            val index = medicines.indexOf(matchedMedication)
             if (index != -1) {
                 coroutineScope.launch {
-                    val hasResult = result != null && result.medications.isNotEmpty()
+                    val hasResult = result != null && result.medicines.isNotEmpty()
                     var target = 1
                     if (!hasResult || uiState.isLoading) target += 2
                     if (uiState.error != null) target += 1
@@ -209,7 +209,7 @@ private fun OcrScreenContent(
             return@Scaffold
         }
 
-        val hasResult = uiState.analysisResult != null && uiState.analysisResult.medications.isNotEmpty()
+        val hasResult = uiState.analysisResult != null && uiState.analysisResult.medicines.isNotEmpty()
         val isAllExpanded = uiState.cardExpansionMap.values.all { it } && uiState.cardExpansionMap.isNotEmpty()
 
         LazyColumn(
@@ -257,7 +257,7 @@ private fun OcrScreenContent(
             uiState.error?.let { item { OcrErrorCard(it) } }
 
             uiState.analysisResult?.let { result ->
-                if (result.medications.isNotEmpty()) {
+                if (result.medicines.isNotEmpty()) {
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             OcrResetButton(onResetAnalysisClick)
@@ -265,11 +265,11 @@ private fun OcrScreenContent(
                         }
                     }
                     itemsIndexed(
-                        result.medications,
-                        { _, med -> med.medicineName ?: med.hashCode() }) { _, med ->
-                        val name = med.medicineName ?: unknownMedicineFallbackText
+                        result.medicines,
+                        { _, med -> med.name ?: med.hashCode() }) { _, med ->
+                        val name = med.name ?: unknownMedicineFallbackText
                         OcrMedicationCard(
-                            medicationInfo = med,
+                            medicineInfo = med,
                             isAlarmRegistered = uiState.registeredAlarmMedicineNames.contains(name),
                             highlightedMedicineName = highlightedMedicineName,
                             isCardExpanded = uiState.cardExpansionMap[name] ?: true,

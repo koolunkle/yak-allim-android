@@ -24,7 +24,7 @@ class OcrMappersTest {
         )
 
         val domainPrescription = rawResponse.toDomain()
-        val mappedMedication = domainPrescription.medications.first()
+        val mappedMedication = domainPrescription.medicines.first()
 
         assertEquals("1", mappedMedication.dosagePerTake)
     }
@@ -47,7 +47,7 @@ class OcrMappersTest {
         )
 
         val domainPrescription = rawResponse.toDomain()
-        val mappedMedication = domainPrescription.medications.first()
+        val mappedMedication = domainPrescription.medicines.first()
 
         assertEquals("2정", mappedMedication.dosagePerTake)
     }

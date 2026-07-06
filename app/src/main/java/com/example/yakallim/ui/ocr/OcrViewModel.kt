@@ -92,8 +92,8 @@ class OcrViewModel @Inject constructor(
             val cacheFile = File(context.cacheDir, "ocr_image_last.jpg")
             val restoredUri = if (cacheFile.exists()) Uri.fromFile(cacheFile) else null
             _uiState.update { state ->
-                val initialExpanded = lastPrescription.medications.associate { med ->
-                    (med.medicineName ?: context.getString(R.string.error_unknown_medicine)) to false
+                val initialExpanded = lastPrescription.medicines.associate { medicine ->
+                    (medicine.name ?: context.getString(R.string.error_unknown_medicine)) to false
                 }
                 state.copy(
                     analysisResult = lastPrescription,
@@ -297,12 +297,12 @@ class OcrViewModel @Inject constructor(
 
             getPrescriptionResultUseCase(jobId).collect { result ->
                 result.onSuccess { analysisResult ->
-                    val isValid = analysisResult.medications.isNotEmpty()
+                    val isValid = analysisResult.medicines.isNotEmpty()
 
                     _uiState.update { state ->
                         val initialExpanded = if (isValid) {
-                            analysisResult.medications.associate { med ->
-                                (med.medicineName ?: context.getString(R.string.error_unknown_medicine)) to false
+                            analysisResult.medicines.associate { medicine ->
+                                (medicine.name ?: context.getString(R.string.error_unknown_medicine)) to false
                             }
                         } else emptyMap()
                         
@@ -333,7 +333,7 @@ class OcrViewModel @Inject constructor(
         }
     }
 
-    fun registerMedicationAlarm(
+    fun registerMedicineAlarm(
         medicineName: String,
         dosagePerTake: String,
         dailyFrequency: Int,
@@ -351,14 +351,14 @@ class OcrViewModel @Inject constructor(
                 _uiState.update { state ->
                     val updatedResult = state.analysisResult?.let { prescription ->
                         prescription.copy(
-                            medications = prescription.medications.map { medication ->
-                                if ((medication.medicineName ?: context.getString(R.string.error_unknown_medicine)) == medicineName) {
-                                    medication.copy(
+                            medicines = prescription.medicines.map { medicine ->
+                                if ((medicine.name ?: context.getString(R.string.error_unknown_medicine)) == medicineName) {
+                                    medicine.copy(
                                         dosagePerTake = dosagePerTake,
                                         dailyFrequency = dailyFrequency,
                                         durationDays = durationDays
                                     )
-                                } else medication
+                                } else medicine
                             }
                         )
                     }
@@ -371,7 +371,7 @@ class OcrViewModel @Inject constructor(
         }
     }
 
-    fun unregisterMedicationAlarm(medicineName: String) {
+    fun unregisterMedicineAlarm(medicineName: String) {
         viewModelScope.launch {
             cancelAlarmUseCase(medicineName)
             _uiState.update {
@@ -400,8 +400,8 @@ class OcrViewModel @Inject constructor(
 
     fun setAllCardsExpansion(expanded: Boolean) {
         _uiState.update { state ->
-            val newExpanded = state.analysisResult?.medications?.associate {
-                (it.medicineName ?: context.getString(R.string.error_unknown_medicine)) to expanded
+            val newExpanded = state.analysisResult?.medicines?.associate { medicine ->
+                (medicine.name ?: context.getString(R.string.error_unknown_medicine)) to expanded
             } ?: emptyMap()
             state.copy(cardExpansionMap = newExpanded)
         }
