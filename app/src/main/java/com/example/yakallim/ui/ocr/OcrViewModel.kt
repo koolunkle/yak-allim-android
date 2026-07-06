@@ -67,6 +67,9 @@ class OcrViewModel @Inject constructor(
     }
 
     private suspend fun recoverActiveJob() {
+        if (_uiState.value.hasImage && !_uiState.value.isLoading) {
+            return
+        }
         val jobId = getPendingPrescriptionUseCase()
         if (!jobId.isNullOrBlank() && jobId != activeJobId) {
             activeJobId = jobId
@@ -111,6 +114,7 @@ class OcrViewModel @Inject constructor(
 
     fun onImageSelected(uri: Uri) {
         stopActiveAnalysis()
+        activeJobId = null
         _uiState.update {
             it.copy(selectedImageUri = uri, capturedImageBitmap = null, analysisResult = null, error = null)
         }
@@ -118,6 +122,7 @@ class OcrViewModel @Inject constructor(
 
     fun onImageCaptured(bitmap: Bitmap) {
         stopActiveAnalysis()
+        activeJobId = null
         _uiState.update {
             it.copy(capturedImageBitmap = bitmap, selectedImageUri = null, analysisResult = null, error = null)
         }

@@ -78,10 +78,11 @@ class OcrRepositoryImpl @Inject constructor(
                 Log.e("OcrRepositoryImpl", "마지막 분석 결과 저장 실패: ${e.message}")
             }
 
-            ocrLocalDataSource.clearPendingJobId()
             emit(Result.success(ocrJobResult.toDomain()))
         } catch (e: Exception) {
             emit(Result.failure(e))
+        } finally {
+            ocrLocalDataSource.clearPendingJobId()
         }
     }.flowOn(Dispatchers.IO)
 
