@@ -38,3 +38,20 @@ fun Context.openExactAlarmSettings() {
         startActivity(intent)
     }
 }
+
+fun Context.checkAlarmPermissions(
+    onNotificationRequired: () -> Unit,
+    onExactAlarmRequired: () -> Unit,
+    onAllGranted: () -> Unit
+) {
+    if (!hasNotificationPermission()) {
+        onNotificationRequired()
+        return
+    }
+    if (!hasExactAlarmPermission()) {
+        onExactAlarmRequired()
+        return
+    }
+    onAllGranted()
+}
+

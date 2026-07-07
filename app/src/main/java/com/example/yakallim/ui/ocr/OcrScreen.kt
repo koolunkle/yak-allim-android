@@ -1,7 +1,10 @@
 package com.example.yakallim.ui.ocr
 
 import android.Manifest
-import android.content.Context
+import android.app.Activity
+import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,17 +25,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.IntentCompat
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -40,6 +47,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.yakallim.R
 import com.example.yakallim.ui.camera.CameraScreen
 import com.example.yakallim.ui.ocr.components.OcrActionButton
+import com.example.yakallim.ui.ocr.components.OcrAlarmDialog
 import com.example.yakallim.ui.ocr.components.OcrErrorCard
 import com.example.yakallim.ui.ocr.components.OcrExpansionControls
 import com.example.yakallim.ui.ocr.components.OcrGuideBottomSheet
@@ -49,13 +57,15 @@ import com.example.yakallim.ui.ocr.components.OcrMedicationCard
 import com.example.yakallim.ui.ocr.components.OcrResetButton
 import com.example.yakallim.ui.ocr.components.OcrSourcePicker
 import com.example.yakallim.ui.ocr.components.OcrTopBar
-import com.example.yakallim.util.hasExactAlarmPermission
-import com.example.yakallim.util.hasNotificationPermission
+import com.example.yakallim.util.checkAlarmPermissions
+import com.example.yakallim.util.getFileName
 import com.example.yakallim.util.hasPermission
 import com.example.yakallim.util.openExactAlarmSettings
 import com.example.yakallim.util.requiredNotificationPermission
 import com.example.yakallim.util.showToast
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun OcrScreen(
@@ -76,6 +86,7 @@ fun OcrScreen(
     val showGuideSheet = remember { mutableStateOf(false) }
 
     val unknownMedicineLabel = stringResource(R.string.error_unknown_medicine)
+    val alarmSettingSoundTitle = stringResource(R.string.alarm_setting_section_sound)
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -98,6 +109,35 @@ fun OcrScreen(
         it?.let { viewModel.onImageSelected(it) }
     }
 
+    val pendingAlarmData = remember { mutableStateOf<PendingAlarmData?>(null) }
+    val selectedSoundUri = remember { mutableStateOf<String?>(null) }
+
+    val ringtonePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(), onResult = { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val uri = result.data?.let { intent ->
+                    IntentCompat.getParcelableExtra(
+                        intent, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java
+                    )
+                }
+                selectedSoundUri.value = uri?.toString()
+            }
+        })
+
+    val audioPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(), onResult = { uri ->
+            uri?.let {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        it, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                selectedSoundUri.value = it.toString()
+            }
+        })
+
     if (showCamera.value) {
         CameraScreen(
             onCaptureSuccess = { viewModel.onImageCaptured(it); showCamera.value = false },
@@ -107,18 +147,19 @@ fun OcrScreen(
     }
 
     val onRegisterAlarm =
-        { medicineName: String, dosagePerTake: String, dailyFrequency: Int, durationDays: Int, instruction: String ->
-            checkPermissions(
-                context,
-                { requiredNotificationPermission?.let { notificationLauncher.launch(it) } }) {
-                viewModel.registerMedicineAlarm(
-                    medicineName,
-                    dosagePerTake,
-                    dailyFrequency,
-                    durationDays,
-                    instruction
+        { medicineName: String, dosagePerTake: String, dailyFrequency: Int, durationDays: Int ->
+            context.checkAlarmPermissions(onNotificationRequired = {
+                requiredNotificationPermission?.let { notificationLauncher.launch(it) }
+            }, onExactAlarmRequired = {
+                context.showToast(R.string.alarm_permission_required, Toast.LENGTH_LONG)
+                context.openExactAlarmSettings()
+            }, onAllGranted = {
+                val existingDetail = uiState.registeredAlarmMedicineNames[medicineName]
+                selectedSoundUri.value = existingDetail?.soundUri
+                pendingAlarmData.value = PendingAlarmData(
+                    medicineName, dosagePerTake, dailyFrequency, durationDays
                 )
-            }
+            })
         }
 
     OcrScreenContent(
@@ -126,8 +167,7 @@ fun OcrScreen(
         uiState = uiState,
         lazyListState = lazyListState,
         highlightedMedicineName = highlightedMedicineName.value,
-        isGuideSheetVisible = showGuideSheet.value,
-        unknownMedicineFallbackText = unknownMedicineLabel,
+        isGuideSheetVisible = showGuideSheet.value, unknownMedicineLabel = unknownMedicineLabel,
         onGuideClick = { showGuideSheet.value = true },
         onGuideDismissRequest = { showGuideSheet.value = false },
         onCameraCaptureClick = {
@@ -148,6 +188,7 @@ fun OcrScreen(
             val medicines = result?.medicines ?: emptyList()
             val matchedMedication =
                 medicines.find { (it.name ?: unknownMedicineLabel) == name }
+
             highlightedMedicineName.value = matchedMedication?.name ?: unknownMedicineLabel
 
             val index = medicines.indexOf(matchedMedication)
@@ -155,9 +196,11 @@ fun OcrScreen(
                 coroutineScope.launch {
                     val hasResult = result != null && result.medicines.isNotEmpty()
                     var target = 1
+
                     if (!hasResult || uiState.isLoading) target += 2
                     if (uiState.error != null) target += 1
                     if (hasResult) target += 1
+
                     val offset = with(density) { (-16).dp.roundToPx() }
                     lazyListState.animateScrollToItem(target + index, offset)
                 }
@@ -166,6 +209,46 @@ fun OcrScreen(
         onToggleCardExpansion = viewModel::toggleCardExpansion,
         onToggleAllCardsExpansion = viewModel::setAllCardsExpansion
     )
+
+    pendingAlarmData.value?.let { pendingData ->
+        OcrAlarmDialog(
+            medicineName = pendingData.medicineName,
+            dailyFrequency = pendingData.dailyFrequency,
+            initialSoundUri = selectedSoundUri.value,
+            initialSoundName = alarmSoundName(selectedSoundUri.value),
+            initialAlarmTimes = uiState.registeredAlarmMedicineNames[pendingData.medicineName]?.times,
+            onDismiss = {
+                pendingAlarmData.value = null
+            },
+            onConfirm = { alarmTimes, soundUri ->
+                viewModel.registerMedicineAlarm(
+                    pendingData.medicineName,
+                    pendingData.dosagePerTake,
+                    pendingData.dailyFrequency,
+                    pendingData.durationDays,
+                    alarmTimes,
+                    soundUri
+                )
+                pendingAlarmData.value = null
+            },
+            onSelectDeviceAudio = {
+                audioPickerLauncher.launch(arrayOf("audio/*"))
+            },
+            onSelectRingtone = {
+                val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                    putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                    putExtra(
+                        RingtoneManager.EXTRA_RINGTONE_TITLE, alarmSettingSoundTitle
+                    )
+                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+                    selectedSoundUri.value?.let {
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, it.toUri())
+                    }
+                }
+                ringtonePickerLauncher.launch(intent)
+            })
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -175,8 +258,7 @@ private fun OcrScreenContent(
     uiState: OcrUiState,
     lazyListState: LazyListState,
     highlightedMedicineName: String?,
-    isGuideSheetVisible: Boolean,
-    unknownMedicineFallbackText: String,
+    isGuideSheetVisible: Boolean, unknownMedicineLabel: String,
     onGuideClick: () -> Unit,
     onGuideDismissRequest: () -> Unit,
     onCameraCaptureClick: () -> Unit,
@@ -184,8 +266,7 @@ private fun OcrScreenContent(
     onResetAnalysisClick: () -> Unit,
     onStartAnalysisClick: () -> Unit,
     onCancelAnalysisClick: () -> Unit,
-    onMedicineTextClick: (String) -> Unit,
-    onRegisterAlarmClick: (String, String, Int, Int, String) -> Unit,
+    onMedicineTextClick: (String) -> Unit, onRegisterAlarmClick: (String, String, Int, Int) -> Unit,
     onCancelAlarmClick: (String) -> Unit,
     onToggleCardExpansion: (String) -> Unit,
     onToggleAllCardsExpansion: (Boolean) -> Unit
@@ -224,11 +305,11 @@ private fun OcrScreenContent(
             item {
                 Spacer(Modifier.height(8.dp))
                 if (uiState.isLoading) {
-                    val progressState = uiState.progressState ?: OcrProgressState()
+                    val progress = uiState.progressState ?: OcrProgressState()
                     OcrLoadingContent(
-                        progress = progressState.progress,
-                        message = progressState.message,
-                        isSseActive = progressState.isSseActive,
+                        progress = progress.progress,
+                        message = progress.message,
+                        isSseActive = progress.isSseActive,
                         onCancelClick = onCancelAnalysisClick
                     )
                 } else {
@@ -236,7 +317,7 @@ private fun OcrScreenContent(
                         selectedImageUri = uiState.selectedImageUri,
                         capturedImageBitmap = uiState.capturedImageBitmap,
                         analysisResult = uiState.analysisResult,
-                        registeredAlarmMedicineNames = uiState.registeredAlarmMedicineNames,
+                        registeredAlarmMedicineNames = uiState.registeredAlarmMedicineNames.keys,
                         onMedicineTextClick = onMedicineTextClick
                     )
                 }
@@ -266,11 +347,21 @@ private fun OcrScreenContent(
                     }
                     itemsIndexed(
                         result.medicines,
-                        { _, med -> med.name ?: med.hashCode() }) { _, med ->
-                        val name = med.name ?: unknownMedicineFallbackText
+                        { _, medicine -> medicine.name ?: medicine.hashCode() }) { _, medicine ->
+                        val name = medicine.name ?: unknownMedicineLabel
+                        val alarm = uiState.registeredAlarmMedicineNames[name]
+                        val alarmSoundName = if (alarm != null) {
+                            alarmSoundName(alarm.soundUri)
+                        } else {
+                            stringResource(R.string.alarm_sound_default)
+                        }
                         OcrMedicationCard(
-                            medicineInfo = med,
-                            isAlarmRegistered = uiState.registeredAlarmMedicineNames.contains(name),
+                            medicineInfo = medicine,
+                            isAlarmRegistered = uiState.registeredAlarmMedicineNames.containsKey(
+                                name
+                            ),
+                            alarm = alarm,
+                            alarmSoundName = alarmSoundName,
                             highlightedMedicineName = highlightedMedicineName,
                             isCardExpanded = uiState.cardExpansionMap[name] ?: true,
                             onToggleExpansionClick = { onToggleCardExpansion(name) },
@@ -285,19 +376,27 @@ private fun OcrScreenContent(
     }
 }
 
-private fun checkPermissions(
-    context: Context,
-    launchNotification: () -> Unit,
-    onGranted: () -> Unit
-) {
-    if (!context.hasNotificationPermission()) {
-        launchNotification(); return
+@Composable
+private fun alarmSoundName(soundUri: String?): String {
+    val context = LocalContext.current
+    var systemSoundName by remember(soundUri) { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(soundUri) {
+        if (soundUri != null) {
+            withContext(Dispatchers.IO) {
+                val uriObj = soundUri.toUri()
+                val ringtone = RingtoneManager.getRingtone(context, uriObj)
+                val title = ringtone?.getTitle(context) ?: context.getFileName(uriObj)
+                systemSoundName = title
+            }
+        } else {
+            systemSoundName = null
+        }
     }
-    if (!context.hasExactAlarmPermission()) {
-        context.showToast(
-            R.string.alarm_permission_required,
-            Toast.LENGTH_LONG
-        ); context.openExactAlarmSettings(); return
+
+    return when {
+        soundUri == null -> stringResource(R.string.alarm_sound_default)
+        systemSoundName != null -> systemSoundName!!
+        else -> stringResource(R.string.alarm_sound_device)
     }
-    onGranted()
 }

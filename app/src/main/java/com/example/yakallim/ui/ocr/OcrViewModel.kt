@@ -19,7 +19,9 @@ import com.example.yakallim.domain.usecase.GetLastPrescriptionUseCase
 import com.example.yakallim.domain.usecase.GetPendingPrescriptionUseCase
 import com.example.yakallim.domain.usecase.ScheduleAlarmUseCase
 import com.example.yakallim.domain.usecase.ObserveProgressUseCase
+import com.example.yakallim.domain.usecase.GetDetailAlarmUseCase
 import com.example.yakallim.domain.model.JobStatus
+import com.example.yakallim.domain.model.Alarm
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -46,6 +48,7 @@ class OcrViewModel @Inject constructor(
     private val cancelAlarmUseCase: CancelAlarmUseCase,
     private val cancelPrescriptionUseCase: CancelPrescriptionUseCase,
     private val observeProgressUseCase: ObserveProgressUseCase,
+    private val getDetailAlarmUseCase: GetDetailAlarmUseCase,
     private val imageProcessor: ImageProcessor,
     private val firebaseMessagingObserver: FirebaseMessagingObserver,
     @param:ApplicationContext private val context: Context
@@ -81,8 +84,11 @@ class OcrViewModel @Inject constructor(
 
     private suspend fun recoverActiveAlarms() {
         val activeAlarms = getActiveAlarmsUseCase()
-        _uiState.update {
-            it.copy(registeredAlarmMedicineNames = activeAlarms)
+        val restoredDetails = activeAlarms.associateWith { medicineName ->
+            getDetailAlarmUseCase(medicineName) ?: Alarm(times = emptyList(), soundUri = null)
+        }
+        _uiState.update { state ->
+            state.copy(registeredAlarmMedicineNames = state.registeredAlarmMedicineNames + restoredDetails)
         }
     }
 
@@ -338,11 +344,23 @@ class OcrViewModel @Inject constructor(
         dosagePerTake: String,
         dailyFrequency: Int,
         durationDays: Int,
-        instruction: String,
+        alarmTimes: List<String>,
+        soundUri: String?
     ) {
         viewModelScope.launch {
+            try {
+                cancelAlarmUseCase(medicineName)
+            } catch (_: Exception) {}
+
             val isSuccess = try {
-                scheduleAlarmUseCase(medicineName, dosagePerTake, dailyFrequency, durationDays, instruction)
+                scheduleAlarmUseCase(
+                    medicineName,
+                    dosagePerTake,
+                    dailyFrequency,
+                    durationDays,
+                    alarmTimes,
+                    soundUri
+                )
                 true
             } catch (_: Exception) {
                 false
@@ -363,7 +381,7 @@ class OcrViewModel @Inject constructor(
                         )
                     }
                     state.copy(
-                        registeredAlarmMedicineNames = state.registeredAlarmMedicineNames + medicineName,
+                        registeredAlarmMedicineNames = state.registeredAlarmMedicineNames + (medicineName to Alarm(alarmTimes, soundUri)),
                         analysisResult = updatedResult
                     )
                 }
@@ -375,7 +393,9 @@ class OcrViewModel @Inject constructor(
         viewModelScope.launch {
             cancelAlarmUseCase(medicineName)
             _uiState.update {
-                it.copy(registeredAlarmMedicineNames = it.registeredAlarmMedicineNames - medicineName)
+                it.copy(
+                    registeredAlarmMedicineNames = it.registeredAlarmMedicineNames - medicineName
+                )
             }
         }
     }
@@ -425,13 +445,13 @@ class OcrViewModel @Inject constructor(
     }
 
     private fun clearAllRegisteredAlarms() {
-        val alarms = _uiState.value.registeredAlarmMedicineNames
+        val alarms = _uiState.value.registeredAlarmMedicineNames.keys
         if (alarms.isNotEmpty()) {
             viewModelScope.launch {
                 alarms.forEach { medicineName ->
                     cancelAlarmUseCase(medicineName)
                 }
-                _uiState.update { it.copy(registeredAlarmMedicineNames = emptySet()) }
+                _uiState.update { it.copy(registeredAlarmMedicineNames = emptyMap()) }
             }
         }
     }

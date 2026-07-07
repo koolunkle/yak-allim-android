@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import com.example.yakallim.domain.model.Prescription
 import com.example.yakallim.domain.model.JobStatus
+import com.example.yakallim.domain.model.Alarm
 
 sealed interface OcrError {
     object Network : OcrError
@@ -25,7 +26,7 @@ data class OcrUiState(
     val selectedImageUri: Uri? = null,
     val capturedImageBitmap: Bitmap? = null,
     val analysisResult: Prescription? = null,
-    val registeredAlarmMedicineNames: Set<String> = emptySet(),
+    val registeredAlarmMedicineNames: Map<String, Alarm> = emptyMap(),
     val cardExpansionMap: Map<String, Boolean> = emptyMap(),
     val isLoading: Boolean = false,
     val isInitialized: Boolean = false,
@@ -34,3 +35,10 @@ data class OcrUiState(
 ) {
     val hasImage: Boolean get() = selectedImageUri != null || capturedImageBitmap != null
 }
+
+data class PendingAlarmData(
+    val medicineName: String,
+    val dosagePerTake: String,
+    val dailyFrequency: Int,
+    val durationDays: Int
+)

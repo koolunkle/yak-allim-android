@@ -11,8 +11,9 @@ class ScheduleAlarmUseCase @Inject constructor(
         dosagePerTake: String,
         dailyFrequency: Int,
         durationDays: Int,
-        instruction: String
+        alarmTimes: List<String>,
+        soundUri: String?
     ) {
-        alarmScheduler.schedule(medicineName, dosagePerTake, dailyFrequency, durationDays, instruction)
+        alarmScheduler.schedule(medicineName, dosagePerTake, dailyFrequency, durationDays, alarmTimes, soundUri)
     }
 }

@@ -51,9 +51,11 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.yakallim.R
 import com.example.yakallim.domain.model.Medicine
+import com.example.yakallim.domain.model.Alarm
 import com.example.yakallim.ui.theme.HighlightCoral
 import com.example.yakallim.ui.theme.MintBorder
 import com.example.yakallim.ui.theme.Primary
@@ -68,10 +70,12 @@ import com.example.yakallim.ui.theme.Warning
 fun OcrMedicationCard(
     medicineInfo: Medicine,
     isAlarmRegistered: Boolean,
+    alarm: Alarm?,
+    alarmSoundName: String,
     highlightedMedicineName: String?,
     isCardExpanded: Boolean,
     onToggleExpansionClick: () -> Unit,
-    onRegisterAlarmClick: (String, String, Int, Int, String) -> Unit,
+    onRegisterAlarmClick: (String, String, Int, Int) -> Unit,
     onCancelAlarmClick: (String) -> Unit,
 ) {
     val medicineName = medicineInfo.name ?: stringResource(R.string.error_unknown_medicine)
@@ -191,6 +195,20 @@ fun OcrMedicationCard(
                             color = Primary.copy(alpha = 0.7f),
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        if (isAlarmRegistered && alarm != null && alarm.times.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(height = 4.dp))
+                            Text(
+                                text = stringResource(
+                                    R.string.alarm_card_active_summary,
+                                    alarm.times.joinToString(", "),
+                                    alarmSoundName
+                                ),
+                                color = Primary.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
                 Row(
@@ -222,8 +240,7 @@ fun OcrMedicationCard(
                                         medicineName,
                                         "$dosagePerTake$dosageUnit",
                                         frequency.toIntOrNull() ?: 0,
-                                        durationDays.toIntOrNull() ?: 0,
-                                        combinedDescription
+                                        durationDays.toIntOrNull() ?: 0
                                     )
                                 },
                                 modifier = Modifier.height(height = 36.dp),
@@ -312,22 +329,83 @@ fun OcrMedicationCard(
                         )
                     }
                 }
-                if (isAlarmRegistered) {
-                    Button(
-                        onClick = { onCancelAlarmClick(medicineName) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(height = 48.dp),
+                if (isAlarmRegistered && alarm != null && alarm.times.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(size = 12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = HighlightCoral,
-                            contentColor = Color.White
+                        color = Color.White.copy(alpha = 0.5f),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = animatedInternalBorderColor.copy(alpha = 0.35f)
                         )
                     ) {
-                        Text(
-                            text = stringResource(R.string.alarm_btn_unregister),
-                            fontWeight = FontWeight.Bold
-                        )
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text(
+                                text = stringResource(R.string.alarm_card_registered_detail),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            Spacer(modifier = Modifier.height(height = 6.dp))
+                            Text(
+                                text = stringResource(R.string.alarm_card_time_format, alarm.times.joinToString(", ")),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(height = 4.dp))
+                            Text(
+                                text = stringResource(R.string.alarm_card_sound_format, alarmSoundName),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+                if (isAlarmRegistered) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                onRegisterAlarmClick(
+                                    medicineName,
+                                    "$dosagePerTake$dosageUnit",
+                                    frequency.toIntOrNull() ?: 0,
+                                    durationDays.toIntOrNull() ?: 0
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(height = 48.dp),
+                            shape = RoundedCornerShape(size = 12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Secondary,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = stringResource(R.string.alarm_btn_modify),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Button(
+                            onClick = { onCancelAlarmClick(medicineName) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(height = 48.dp),
+                            shape = RoundedCornerShape(size = 12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = HighlightCoral,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = stringResource(R.string.alarm_btn_unregister),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 } else {
                     Button(
@@ -336,8 +414,7 @@ fun OcrMedicationCard(
                                 medicineName,
                                 "$dosagePerTake$dosageUnit",
                                 frequency.toIntOrNull() ?: 0,
-                                durationDays.toIntOrNull() ?: 0,
-                                combinedDescription
+                                durationDays.toIntOrNull() ?: 0
                             )
                         },
                         modifier = Modifier

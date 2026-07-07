@@ -2,6 +2,7 @@
     <string name="app_name">Yak-Allim</string>
 
     <string name="common_confirm">확인</string>
+    <string name="common_cancel">취소</string>
     <string name="common_cd_warning_icon">경고 표시 아이콘</string>
     <string name="common_cd_toggle_icon">토글 표시 아이콘</string>
 
@@ -14,8 +15,8 @@
     <string name="ocr_status_analyzing">복약 안내서를 분석하고 있어요</string>
     <string name="ocr_status_subtext">글자를 인식하고 있습니다. 잠시만 기다려 주세요.</string>
     <string name="ocr_status_cancelled">분석 작업이 취소되었습니다.</string>
-    <string name="ocr_status_uploading">이미지를 서버에 업로드하고 있습니다...</string>
-    <string name="ocr_status_network_unstable">네트워크 연결 불안정... 분석 완료 알림을 기다리는 중입니다...</string>
+    <string name="ocr_status_uploading">이미지를 서버에 업로드하고 있습니다…</string>
+    <string name="ocr_status_network_unstable">네트워크 연결 불안정… 분석 완료 알림을 기다리는 중입니다…</string>
 
     <string name="ocr_btn_gallery_select">갤러리 선택</string>
     <string name="ocr_btn_retry">다시 시도</string>
@@ -49,10 +50,12 @@
     <string name="prescription_duration_days">복용 기간</string>
     <string name="prescription_dosage_per_take">복용량</string>
 
+    <string name="error_invalid_time_format">올바른 시간 형식을 입력해 주세요. (예: 09:30)</string>
     <string name="alarm_permission_required">지정 시간에 알람을 받으려면 \'알람 및 리마인더\' 권한이 필요합니다. 설정 화면으로 이동합니다.</string>
     <string name="alarm_permission_denied">알림을 받으시려면 설정에서 알림 권한을 허용해주세요.</string>
     <string name="alarm_btn_register">알람 등록</string>
     <string name="alarm_btn_unregister">알람 해제</string>
+    <string name="alarm_btn_modify">알람 수정</string>
     <string name="alarm_card_format">하루 %1$d회, %2$d일간 복용\n(1회 %3$s 복용)</string>
 
     <string name="alarm_channel_name">복약 알람 채널</string>
@@ -61,6 +64,22 @@
     <string name="alarm_content_title_format">[복약 알람] %1$s</string>
     <string name="alarm_content_text">약품 복용할 시간입니다.</string>
     <string name="alarm_big_text_format">약품 복용할 시간입니다.\n%1$s</string>
+
+    <string name="alarm_setting_title">%1$s 알람 설정</string>
+    <string name="alarm_setting_section_time">알람 시간 설정</string>
+    <string name="alarm_setting_time_index">%1$d회차 알람 시간</string>
+    <string name="alarm_setting_time_index_short">%1$d회차</string>
+    <string name="alarm_setting_section_sound">알람음 설정</string>
+    <string name="alarm_setting_btn_ringtone">시스템 알람음 선택</string>
+    <string name="alarm_setting_btn_ringtone_short">시스템 알람음</string>
+    <string name="alarm_setting_btn_device_audio">기기 내 오디오 선택</string>
+    <string name="alarm_setting_btn_device_audio_short">기기 내 오디오</string>
+    <string name="alarm_card_registered_detail">복약 알람 안내</string>
+    <string name="alarm_card_time_format">시간: %1$s</string>
+    <string name="alarm_card_sound_format">음원: %1$s</string>
+    <string name="alarm_card_active_summary">⏰ %1$s • %2$s</string>
+    <string name="alarm_sound_default">기본 알림음</string>
+    <string name="alarm_sound_device">기기 내 음원</string>
 
     <string name="notification_fcm_channel_name">복약 안내서 분석 알림</string>
     <string name="notification_fcm_completed_title">분석 완료</string>
