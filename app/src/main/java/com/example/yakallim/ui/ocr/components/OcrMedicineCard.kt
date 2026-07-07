@@ -67,7 +67,7 @@ import com.example.yakallim.ui.theme.Warning
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun OcrMedicationCard(
+fun OcrMedicineCard(
     medicineInfo: Medicine,
     isAlarmRegistered: Boolean,
     alarm: Alarm?,
@@ -278,7 +278,7 @@ fun OcrMedicationCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(space = 10.dp)
                 ) {
-                    MedicationInputField(
+                    MedicineInputField(
                         value = frequency,
                         onValueChange = { frequency = it },
                         labelTextResId = R.string.prescription_daily_frequency,
@@ -287,7 +287,7 @@ fun OcrMedicationCard(
                         borderColor = animatedInternalBorderColor,
                         isAlarmRegistered = isAlarmRegistered
                     )
-                    MedicationInputField(
+                    MedicineInputField(
                         value = durationDays,
                         onValueChange = { durationDays = it },
                         labelTextResId = R.string.prescription_duration_days,
@@ -296,7 +296,7 @@ fun OcrMedicationCard(
                         borderColor = animatedInternalBorderColor,
                         isAlarmRegistered = isAlarmRegistered
                     )
-                    MedicationInputField(
+                    MedicineInputField(
                         value = dosagePerTake,
                         onValueChange = { dosagePerTake = it },
                         labelTextResId = R.string.prescription_dosage_per_take,
@@ -438,7 +438,7 @@ fun OcrMedicationCard(
 }
 
 @Composable
-private fun MedicationInputField(
+private fun MedicineInputField(
     value: String,
     onValueChange: (String) -> Unit,
     labelTextResId: Int,

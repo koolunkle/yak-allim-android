@@ -53,7 +53,7 @@ import com.example.yakallim.ui.ocr.components.OcrExpansionControls
 import com.example.yakallim.ui.ocr.components.OcrGuideBottomSheet
 import com.example.yakallim.ui.ocr.components.OcrImageViewer
 import com.example.yakallim.ui.ocr.components.OcrLoadingContent
-import com.example.yakallim.ui.ocr.components.OcrMedicationCard
+import com.example.yakallim.ui.ocr.components.OcrMedicineCard
 import com.example.yakallim.ui.ocr.components.OcrResetButton
 import com.example.yakallim.ui.ocr.components.OcrSourcePicker
 import com.example.yakallim.ui.ocr.components.OcrTopBar
@@ -355,7 +355,7 @@ private fun OcrScreenContent(
                         } else {
                             stringResource(R.string.alarm_sound_default)
                         }
-                        OcrMedicationCard(
+                        OcrMedicineCard(
                             medicineInfo = medicine,
                             isAlarmRegistered = uiState.registeredAlarmMedicineNames.containsKey(
                                 name
