@@ -7,5 +7,7 @@ enum class JobStatus {
     TEXT_RECOGNITION,
     EXPORT_RESULT,
     COMPLETED,
-    FAILED
+    FAILED;
+
+    val isFinished: Boolean get() = this == COMPLETED || this == FAILED
 }

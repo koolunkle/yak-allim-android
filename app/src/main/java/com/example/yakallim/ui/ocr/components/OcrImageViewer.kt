@@ -1,8 +1,6 @@
 package com.example.yakallim.ui.ocr.components
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -42,6 +40,7 @@ import coil.compose.AsyncImage
 import com.example.yakallim.R
 import com.example.yakallim.domain.model.Coordinate
 import com.example.yakallim.domain.model.Prescription
+import com.example.yakallim.ui.ocr.OcrImage
 import com.example.yakallim.ui.theme.Primary
 import com.example.yakallim.ui.theme.Secondary
 import com.example.yakallim.ui.theme.Success
@@ -49,8 +48,7 @@ import com.example.yakallim.ui.theme.Surface
 
 @Composable
 fun OcrImageViewer(
-    selectedImageUri: Uri?,
-    capturedImageBitmap: Bitmap?,
+    image: OcrImage?,
     analysisResult: Prescription?,
     registeredAlarmMedicineNames: Set<String> = emptySet(),
     onMedicineTextClick: (String) -> Unit
@@ -70,33 +68,37 @@ fun OcrImageViewer(
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (selectedImageUri != null || capturedImageBitmap != null) {
+        if (image != null) {
             Box(modifier = Modifier.fillMaxSize()) {
-                if (selectedImageUri != null) AsyncImage(
-                    model = selectedImageUri,
-                    contentDescription = stringResource(R.string.ocr_cd_prescription),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                else if (capturedImageBitmap != null) Image(
-                    bitmap = capturedImageBitmap.asImageBitmap(),
-                    contentDescription = stringResource(R.string.camera_cd_prescription),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+                when (image) {
+                    is OcrImage.UriSource -> AsyncImage(
+                        model = image.uri,
+                        contentDescription = stringResource(R.string.ocr_cd_prescription),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    is OcrImage.BitmapSource -> Image(
+                        bitmap = image.bitmap.asImageBitmap(),
+                        contentDescription = stringResource(R.string.camera_cd_prescription),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
                 val context = LocalContext.current
-                val origSize = remember(selectedImageUri, capturedImageBitmap) {
-                    if (capturedImageBitmap != null) Pair(capturedImageBitmap.width, capturedImageBitmap.height)
-                    else selectedImageUri?.let { uri ->
-                        try {
-                            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                            context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
-                            if (options.outWidth > 0) Pair(options.outWidth, options.outHeight) else Pair(1000, 1000)
-                        } catch (e: Exception) {
-                            Log.e("OcrImageViewer", "Size failed", e); Pair(1000, 1000)
+                val origSize = remember(image) {
+                    when (image) {
+                        is OcrImage.BitmapSource -> Pair(image.bitmap.width, image.bitmap.height)
+                        is OcrImage.UriSource -> {
+                            try {
+                                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                                context.contentResolver.openInputStream(image.uri)?.use { BitmapFactory.decodeStream(it, null, options) }
+                                if (options.outWidth > 0) Pair(options.outWidth, options.outHeight) else Pair(1000, 1000)
+                            } catch (e: Exception) {
+                                Log.e("OcrImageViewer", "Size failed", e); Pair(1000, 1000)
+                            }
                         }
-                    } ?: Pair(1000, 1000)
+                    }
                 }
 
                 val medicines = analysisResult?.medicines ?: emptyList()
@@ -116,7 +118,7 @@ fun OcrImageViewer(
                                                 medicine.name ?: unknownMedicineLabel
                                             medicine.bounds.forEach { box ->
                                                 if (getScaledRect(
-                                                        box,
+                                                        box.points,
                                                         origSize.first,
                                                         origSize.second,
                                                         viewW,
@@ -138,7 +140,7 @@ fun OcrImageViewer(
                                 val borderColor = if (isRegistered) Success.copy(0.6f) else Secondary.copy(0.4f)
 
                                 medicine.bounds.forEach { box ->
-                                    val rect = getScaledRect(box, origSize.first, origSize.second, viewW, viewH)
+                                    val rect = getScaledRect(box.points, origSize.first, origSize.second, viewW, viewH)
                                     drawRect(color = fillColor, topLeft = rect.topLeft, size = rect.size)
                                     drawRect(color = borderColor, topLeft = rect.topLeft, size = rect.size, style = Stroke(width = 1.5f.dp.toPx()))
                                 }

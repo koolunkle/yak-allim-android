@@ -1,6 +1,7 @@
 package com.example.yakallim.data.mapper
 
 import com.example.yakallim.data.datasource.remote.dto.OcrResponse
+import com.example.yakallim.domain.model.BoundingPolygon
 import com.example.yakallim.domain.model.Coordinate
 import com.example.yakallim.domain.model.Medicine
 import com.example.yakallim.domain.model.Prescription
@@ -21,7 +22,9 @@ fun OcrResponse.toDomain(): Prescription {
             durationDays = prescription.durationDays ?: 0,
             isLowConfidence = matchedConfidence < 0.8f,
             bounds = prescription.bounds?.map { polygon ->
-                polygon.points.map { coordinate -> Coordinate(coordinate.x, coordinate.y) }
+                BoundingPolygon(
+                    polygon.points.map { coordinate -> Coordinate(coordinate.x, coordinate.y) }
+                )
             } ?: emptyList()
         )
     } ?: emptyList()
@@ -30,7 +33,7 @@ fun OcrResponse.toDomain(): Prescription {
         TextBlock(
             text = textBlock.text,
             confidence = textBlock.confidence,
-            bounds = textBlock.bounds.map { Coordinate(it.x, it.y) }
+            bounds = BoundingPolygon(textBlock.bounds.map { Coordinate(it.x, it.y) })
         )
     }
 

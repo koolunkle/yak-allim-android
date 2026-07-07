@@ -109,7 +109,7 @@ fun OcrScreen(
         it?.let { viewModel.onImageSelected(it) }
     }
 
-    val pendingAlarmData = remember { mutableStateOf<PendingAlarmData?>(null) }
+    val pendingAlarmData = remember { mutableStateOf<PendingAlarm?>(null) }
     val selectedSoundUri = remember { mutableStateOf<String?>(null) }
 
     val ringtonePickerLauncher = rememberLauncherForActivityResult(
@@ -154,9 +154,9 @@ fun OcrScreen(
                 context.showToast(R.string.alarm_permission_required, Toast.LENGTH_LONG)
                 context.openExactAlarmSettings()
             }, onAllGranted = {
-                val existingDetail = uiState.registeredAlarmMedicineNames[medicineName]
+                val existingDetail = uiState.registeredAlarms[medicineName]
                 selectedSoundUri.value = existingDetail?.soundUri
-                pendingAlarmData.value = PendingAlarmData(
+                pendingAlarmData.value = PendingAlarm(
                     medicineName, dosagePerTake, dailyFrequency, durationDays
                 )
             })
@@ -216,7 +216,7 @@ fun OcrScreen(
             dailyFrequency = pendingData.dailyFrequency,
             initialSoundUri = selectedSoundUri.value,
             initialSoundName = alarmSoundName(selectedSoundUri.value),
-            initialAlarmTimes = uiState.registeredAlarmMedicineNames[pendingData.medicineName]?.times,
+            initialAlarmTimes = uiState.registeredAlarms[pendingData.medicineName]?.times,
             onDismiss = {
                 pendingAlarmData.value = null
             },
@@ -300,24 +300,23 @@ private fun OcrScreenContent(
                 .padding(padding)
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(space = 16.dp)
         ) {
             item {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(height = 8.dp))
                 if (uiState.isLoading) {
-                    val progress = uiState.progressState ?: OcrProgressState()
+                    val progress = uiState.progress ?: OcrProgress()
                     OcrLoadingContent(
-                        progress = progress.progress,
+                        progress = progress.percent,
                         message = progress.message,
                         isSseActive = progress.isSseActive,
                         onCancelClick = onCancelAnalysisClick
                     )
                 } else {
                     OcrImageViewer(
-                        selectedImageUri = uiState.selectedImageUri,
-                        capturedImageBitmap = uiState.capturedImageBitmap,
+                        image = uiState.selectedImage,
                         analysisResult = uiState.analysisResult,
-                        registeredAlarmMedicineNames = uiState.registeredAlarmMedicineNames.keys,
+                        registeredAlarmMedicineNames = uiState.registeredAlarms.keys,
                         onMedicineTextClick = onMedicineTextClick
                     )
                 }
@@ -340,7 +339,7 @@ private fun OcrScreenContent(
             uiState.analysisResult?.let { result ->
                 if (result.medicines.isNotEmpty()) {
                     item {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(space = 8.dp)) {
                             OcrResetButton(onResetAnalysisClick)
                             OcrExpansionControls(isAllExpanded, onToggleAllCardsExpansion)
                         }
@@ -349,7 +348,7 @@ private fun OcrScreenContent(
                         result.medicines,
                         { _, medicine -> medicine.name ?: medicine.hashCode() }) { _, medicine ->
                         val name = medicine.name ?: unknownMedicineLabel
-                        val alarm = uiState.registeredAlarmMedicineNames[name]
+                        val alarm = uiState.registeredAlarms[name]
                         val alarmSoundName = if (alarm != null) {
                             alarmSoundName(alarm.soundUri)
                         } else {
@@ -357,7 +356,7 @@ private fun OcrScreenContent(
                         }
                         OcrMedicineCard(
                             medicineInfo = medicine,
-                            isAlarmRegistered = uiState.registeredAlarmMedicineNames.containsKey(
+                            isAlarmRegistered = uiState.registeredAlarms.containsKey(
                                 name
                             ),
                             alarm = alarm,
@@ -371,7 +370,7 @@ private fun OcrScreenContent(
                     }
                 }
             }
-            item { Spacer(Modifier.height(32.dp)) }
+            item { Spacer(Modifier.height(height = 32.dp)) }
         }
     }
 }

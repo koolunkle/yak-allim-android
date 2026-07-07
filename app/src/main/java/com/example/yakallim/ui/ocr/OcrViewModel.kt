@@ -88,7 +88,7 @@ class OcrViewModel @Inject constructor(
             getDetailAlarmUseCase(medicineName) ?: Alarm(times = emptyList(), soundUri = null)
         }
         _uiState.update { state ->
-            state.copy(registeredAlarmMedicineNames = state.registeredAlarmMedicineNames + restoredDetails)
+            state.copy(registeredAlarms = state.registeredAlarms + restoredDetails)
         }
     }
 
@@ -103,7 +103,7 @@ class OcrViewModel @Inject constructor(
                 }
                 state.copy(
                     analysisResult = lastPrescription,
-                    selectedImageUri = restoredUri,
+                    selectedImage = restoredUri?.let { OcrImage.UriSource(it) },
                     cardExpansionMap = initialExpanded
                 )
             }
@@ -122,7 +122,7 @@ class OcrViewModel @Inject constructor(
         stopActiveAnalysis()
         activeJobId = null
         _uiState.update {
-            it.copy(selectedImageUri = uri, capturedImageBitmap = null, analysisResult = null, error = null)
+            it.copy(selectedImage = OcrImage.UriSource(uri), analysisResult = null, error = null)
         }
     }
 
@@ -130,7 +130,7 @@ class OcrViewModel @Inject constructor(
         stopActiveAnalysis()
         activeJobId = null
         _uiState.update {
-            it.copy(capturedImageBitmap = bitmap, selectedImageUri = null, analysisResult = null, error = null)
+            it.copy(selectedImage = OcrImage.BitmapSource(bitmap), analysisResult = null, error = null)
         }
     }
     fun resetAnalysisResult() {
@@ -144,10 +144,9 @@ class OcrViewModel @Inject constructor(
             it.copy(
                 analysisResult = null,
                 error = null,
-                selectedImageUri = null,
-                capturedImageBitmap = null,
+                selectedImage = null,
                 cardExpansionMap = emptyMap(),
-                progressState = null
+                progress = null
             )
         }
     }
@@ -174,17 +173,20 @@ class OcrViewModel @Inject constructor(
                     error = null,
                     analysisResult = null,
                     cardExpansionMap = emptyMap(),
-                    progressState = OcrProgressState(
+                    progress = OcrProgress(
                         jobStatus = JobStatus.ENQUEUED,
-                        progress = 3,
+                        percent = 3,
                         message = context.getString(R.string.ocr_status_uploading),
                         isSseActive = true
                     )
                 )
             }
 
-            val file = currentState.selectedImageUri?.let { imageProcessor.uriToFile(it) }
-                ?: currentState.capturedImageBitmap?.let { imageProcessor.bitmapToFile(it) }
+            val file = when (val image = currentState.selectedImage) {
+                is OcrImage.UriSource -> imageProcessor.uriToFile(image.uri)
+                is OcrImage.BitmapSource -> imageProcessor.bitmapToFile(image.bitmap)
+                null -> null
+            }
             if (file == null) {
                 _uiState.update {
                     it.copy(
@@ -210,8 +212,8 @@ class OcrViewModel @Inject constructor(
 
             _uiState.update { state ->
                 state.copy(
-                    progressState = state.progressState?.copy(
-                        progress = 5
+                    progress = state.progress?.copy(
+                        percent = 5
                     )
                 )
             }
@@ -221,9 +223,9 @@ class OcrViewModel @Inject constructor(
                 observeProgressUseCase(jobId).collect { progress ->
                     _uiState.update { state ->
                         state.copy(
-                            progressState = state.progressState?.copy(
+                            progress = state.progress?.copy(
                                 jobStatus = progress.jobStatus,
-                                progress = progress.percent,
+                                percent = progress.percent,
                                 message = progress.message
                             )
                         )
@@ -250,7 +252,7 @@ class OcrViewModel @Inject constructor(
             if (!isOcrCompleted) {
                 _uiState.update { state ->
                     state.copy(
-                        progressState = state.progressState?.copy(
+                        progress = state.progress?.copy(
                             isSseActive = false,
                             message = context.getString(R.string.ocr_status_network_unstable)
                         )
@@ -315,7 +317,7 @@ class OcrViewModel @Inject constructor(
                         state.copy(
                             isLoading = false,
                             analysisResult = if (isValid) analysisResult else null,
-                            selectedImageUri = restoredUri ?: state.selectedImageUri,
+                            selectedImage = restoredUri?.let { OcrImage.UriSource(it) } ?: state.selectedImage,
                             cardExpansionMap = initialExpanded,
                             error = if (isValid) null else OcrError.EmptyResult
                         )
@@ -381,7 +383,7 @@ class OcrViewModel @Inject constructor(
                         )
                     }
                     state.copy(
-                        registeredAlarmMedicineNames = state.registeredAlarmMedicineNames + (medicineName to Alarm(alarmTimes, soundUri)),
+                        registeredAlarms = state.registeredAlarms + (medicineName to Alarm(alarmTimes, soundUri)),
                         analysisResult = updatedResult
                     )
                 }
@@ -394,7 +396,7 @@ class OcrViewModel @Inject constructor(
             cancelAlarmUseCase(medicineName)
             _uiState.update {
                 it.copy(
-                    registeredAlarmMedicineNames = it.registeredAlarmMedicineNames - medicineName
+                    registeredAlarms = it.registeredAlarms - medicineName
                 )
             }
         }
@@ -406,7 +408,7 @@ class OcrViewModel @Inject constructor(
             it.copy(
                 isLoading = false,
                 error = OcrError.Unknown(context.getString(R.string.ocr_status_cancelled)),
-                progressState = null
+                progress = null
             )
         }
     }
@@ -445,13 +447,13 @@ class OcrViewModel @Inject constructor(
     }
 
     private fun clearAllRegisteredAlarms() {
-        val alarms = _uiState.value.registeredAlarmMedicineNames.keys
+        val alarms = _uiState.value.registeredAlarms.keys
         if (alarms.isNotEmpty()) {
             viewModelScope.launch {
                 alarms.forEach { medicineName ->
                     cancelAlarmUseCase(medicineName)
                 }
-                _uiState.update { it.copy(registeredAlarmMedicineNames = emptyMap()) }
+                _uiState.update { it.copy(registeredAlarms = emptyMap()) }
             }
         }
     }

@@ -5,6 +5,6 @@ data class Medicine(
     val dosagePerTake: String,
     val dailyFrequency: Int,
     val durationDays: Int,
-    val bounds: List<List<Coordinate>> = emptyList(),
+    val bounds: List<BoundingPolygon> = emptyList(),
     val isLowConfidence: Boolean = false
 )
