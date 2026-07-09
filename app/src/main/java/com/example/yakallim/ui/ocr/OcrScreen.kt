@@ -253,7 +253,7 @@ fun OcrScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun OcrScreenContent(
+internal fun OcrScreenContent(
     modifier: Modifier,
     uiState: OcrUiState,
     lazyListState: LazyListState,
@@ -346,7 +346,7 @@ private fun OcrScreenContent(
                     }
                     itemsIndexed(
                         result.medicines,
-                        { _, medicine -> medicine.name ?: medicine.hashCode() }) { _, medicine ->
+                        { index, medicine -> "${medicine.name ?: "medicine"}_$index" }) { _, medicine ->
                         val name = medicine.name ?: unknownMedicineLabel
                         val alarm = uiState.registeredAlarms[name]
                         val alarmSoundName = if (alarm != null) {
