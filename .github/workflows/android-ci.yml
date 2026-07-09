@@ -1,0 +1,66 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Create dummy secrets.properties and google-services.json for CI
+      run: |
+        # secrets.properties 더미 파일 생성 (없을 경우 빌드 실패 방지)
+        if [ -f "secrets.defaults.properties" ]; then
+          cp secrets.defaults.properties secrets.properties
+        else
+          echo "BASE_URL=https://api.example.com/" > secrets.properties
+        fi
+        
+        # google-services.json 더미 파일 생성 (Firebase 플러그인 빌드 오류 방지)
+        echo '{
+          "project_info": {
+            "project_number": "1234567890",
+            "project_id": "dummy-project"
+          },
+          "client": [
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:1234567890:android:1234567890",
+                "android_client_info": {
+                  "package_name": "com.example.yakallim"
+                }
+              },
+              "api_key": [
+                {
+                  "current_key": "dummy-api-key"
+                }
+              ],
+              "services": {
+                "appinvite_service": {
+                  "status": 1
+                }
+              }
+            }
+          ],
+          "configuration_version": "1"
+        }' > app/google-services.json
+
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon
