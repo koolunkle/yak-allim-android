@@ -29,3 +29,9 @@ google-services.json
 # Logs
 /logs/
 *.log
+
+# Secrets & Credentials
+.env
+
+# AI Assistant
+.aider*
