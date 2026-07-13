@@ -1,41 +1,39 @@
 pipeline {
-    agent {
-        node {
-            label 'built-in'
-            // 로컬 프로젝트 작업 공간 지정
-            customWorkspace 'C:/Users/a4336/Downloads/yakallim-android'
-        }
-    }
+    agent any
 
     environment {
-        // 안드로이드 SDK 환경변수 설정
-        ANDROID_HOME = 'C:/Users/a4336/AppData/Local/Android/Sdk'
-        // Gradle 전용 캐시 및 설정 디렉토리 지정
-        GRADLE_USER_HOME = 'C:/Users/a4336/.gradle'
-        // JDK 17 지정
-        JAVA_HOME = 'C:/Program Files/Java/jdk-17'
-        // 실행 경로에 JDK 17 반영
-        PATH = "C:/Program Files/Java/jdk-17/bin;${env.PATH}"
+        // 안드로이드 SDK 및 JDK 환경변수 설정
+        ANDROID_HOME = "${env.ANDROID_HOME ?: 'C:\\Users\\a4336\\AppData\\Local\\Android\\Sdk'}"
+        JAVA_HOME = "${env.JAVA_HOME ?: 'C:\\Program Files\\Java\\jdk-17'}"
     }
 
     stages {
-        stage('Source Sync') {
+        stage('Checkout') {
             steps {
-                // 최신 코드 동기화
-                bat 'git pull origin main'
+                // 코드 동기화
+                checkout scm
             }
         }
 
-        stage('Build APK') {
+        stage('Build') {
             steps {
-                // 디버그용 APK 빌드
-                bat 'gradlew.bat clean assembleDebug'
+                // 자격 증명 주입 및 APK 빌드
+                withCredentials([
+                    file(credentialsId: 'android-secrets-properties', variable: 'SECRETS_PROPERTIES'),
+                    file(credentialsId: 'android-google-services-json', variable: 'GOOGLE_SERVICES_JSON')
+                ]) {
+                    bat '''
+                        copy "%SECRETS_PROPERTIES%" "secrets.properties"
+                        copy "%GOOGLE_SERVICES_JSON%" "app\\google-services.json"
+                        gradlew.bat clean assembleDebug
+                    '''
+                }
             }
         }
 
-        stage('Archive APK') {
+        stage('Archive') {
             steps {
-                // 빌드 결과물 아카이빙
+                // 산출물 아카이빙
                 archiveArtifacts artifacts: 'app/build/outputs/apk/debug/*.apk', followSymlinks: false
             }
         }
