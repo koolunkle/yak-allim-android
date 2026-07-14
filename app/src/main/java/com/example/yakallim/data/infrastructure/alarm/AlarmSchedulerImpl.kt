@@ -103,7 +103,9 @@ class AlarmSchedulerImpl @Inject constructor(
         for (i in 0 until alarmCount) {
             val pendingIntent = PendingIntent.getBroadcast(
                 context, generateRequestCode(medicineName, i),
-                Intent(context, AlarmReceiver::class.java),
+                Intent(context, AlarmReceiver::class.java).apply {
+                    setPackage(context.packageName)
+                },
                 PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
             )
             if (pendingIntent != null) {
@@ -137,6 +139,7 @@ class AlarmSchedulerImpl @Inject constructor(
         soundUri: String?
     ): PendingIntent {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
+            setPackage(context.packageName)
             putExtra(AlarmExtraSpec.KEY_MEDICINE_NAME, medicineName)
             putExtra(AlarmExtraSpec.KEY_DOSAGE_PER_TAKE, dosagePerTake)
             putExtra(AlarmExtraSpec.KEY_DAILY_FREQUENCY, dailyFrequency)
