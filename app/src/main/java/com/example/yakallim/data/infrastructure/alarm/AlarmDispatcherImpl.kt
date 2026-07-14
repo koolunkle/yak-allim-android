@@ -81,11 +81,10 @@ class AlarmDispatcherImpl @Inject constructor(
         }
 
         val notificationId = medicineName.hashCode()
-        val contentIntent = Intent(context, MainActivity::class.java).apply {
-            setPackage(context.packageName)
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            data = "yakallim://alarm/$notificationId".toUri()
-        }
+        val contentIntent = Intent(context, MainActivity::class.java)
+        contentIntent.setPackage(context.packageName)
+        contentIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        contentIntent.data = "yakallim://alarm/$notificationId".toUri()
 
         val pendingIntent = PendingIntent.getActivity(
             context,

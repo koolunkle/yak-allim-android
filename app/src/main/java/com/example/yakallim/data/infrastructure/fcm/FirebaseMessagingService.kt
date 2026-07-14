@@ -110,11 +110,10 @@ class FirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(this, MainActivity::class.java).apply {
-            setPackage(packageName)
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra(FcmPayloadSpec.KEY_JOB_ID, jobId)
-        }
+        val intent = Intent(this, MainActivity::class.java)
+        intent.setPackage(packageName)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra(FcmPayloadSpec.KEY_JOB_ID, jobId)
         val pendingIntent = PendingIntent.getActivity(
             this,
             jobId?.hashCode() ?: 0,
