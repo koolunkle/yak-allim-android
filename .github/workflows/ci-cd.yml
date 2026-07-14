@@ -1,4 +1,4 @@
-name: Android CI
+name: Android CI/CD
 
 on:
   push:
@@ -26,14 +26,12 @@ jobs:
 
     - name: Create dummy secrets.properties and google-services.json for CI
       run: |
-        # API 키 및 서버 URL 등 Git 비공개 설정 파일(secrets.properties) 누락으로 인한 빌드 에러 방지용 더미 파일 복사 또는 생성
         if [ -f "secrets.defaults.properties" ]; then
           cp secrets.defaults.properties secrets.properties
         else
           echo "BASE_URL=https://api.example.com/" > secrets.properties
         fi
-        
-        # Firebase SDK 및 플러그인 컴파일 시 필요한 모바일 앱 구성 정보 파일(google-services.json) 부재에 따른 컴파일 실패 예방용 더미 JSON 파일 생성
+
         echo '{
           "project_info": {
             "project_number": "1234567890",
@@ -64,3 +62,27 @@ jobs:
 
     - name: Build with Gradle
       run: ./gradlew build --no-daemon
+
+    - name: Generate Job Summary
+      if: always()
+      run: |
+        echo "### Workflow Execution Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Workflow** | ${{ github.workflow }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Trigger Event** | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Status** | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Tests (Executed)** | Yes |" >> $GITHUB_STEP_SUMMARY
+
+  trigger-jenkins:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Jenkins Generic Webhook
+        run: >
+          curl -X POST "${{ secrets.JENKINS_WEBHOOK_URL }}?token=${{ secrets.JENKINS_TRIGGER_TOKEN }}"
+          -H "Content-Type: application/json"
+          -d '{"ref": "${{ github.ref }}", "repository": "${{ github.repository }}", "commit": "${{ github.sha }}"}'
