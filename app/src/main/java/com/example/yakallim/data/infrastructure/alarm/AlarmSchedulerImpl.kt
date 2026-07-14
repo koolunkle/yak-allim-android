@@ -101,9 +101,11 @@ class AlarmSchedulerImpl @Inject constructor(
         if (alarmCount <= 0) return
 
         for (i in 0 until alarmCount) {
+            val intent = Intent(context, AlarmReceiver::class.java)
+            intent.setPackage(context.packageName)
             val pendingIntent = PendingIntent.getBroadcast(
                 context, generateRequestCode(medicineName, i),
-                Intent(context, AlarmReceiver::class.java),
+                intent,
                 PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
             )
             if (pendingIntent != null) {
@@ -136,13 +138,13 @@ class AlarmSchedulerImpl @Inject constructor(
         index: Int,
         soundUri: String?
     ): PendingIntent {
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra(AlarmExtraSpec.KEY_MEDICINE_NAME, medicineName)
-            putExtra(AlarmExtraSpec.KEY_DOSAGE_PER_TAKE, dosagePerTake)
-            putExtra(AlarmExtraSpec.KEY_DAILY_FREQUENCY, dailyFrequency)
-            putExtra(AlarmExtraSpec.KEY_DURATION_DAYS, durationDays)
-            putExtra(AlarmExtraSpec.KEY_SOUND_URI, soundUri)
-        }
+        val intent = Intent(context, AlarmReceiver::class.java)
+        intent.setPackage(context.packageName)
+        intent.putExtra(AlarmExtraSpec.KEY_MEDICINE_NAME, medicineName)
+        intent.putExtra(AlarmExtraSpec.KEY_DOSAGE_PER_TAKE, dosagePerTake)
+        intent.putExtra(AlarmExtraSpec.KEY_DAILY_FREQUENCY, dailyFrequency)
+        intent.putExtra(AlarmExtraSpec.KEY_DURATION_DAYS, durationDays)
+        intent.putExtra(AlarmExtraSpec.KEY_SOUND_URI, soundUri)
         return PendingIntent.getBroadcast(
             context,
             generateRequestCode(medicineName, index),

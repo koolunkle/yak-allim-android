@@ -1,0 +1,93 @@
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  schedule:
+    - cron: '0 19 * * 0' # 매주 월요일 오전 4시(KST) 주기적 검사
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java-kotlin' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    # CodeQL 도구 초기화 및 언어 설정
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: manual
+        # 정밀 진단용 추가 쿼리 설정
+        # queries: security-extended,security-and-quality
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v5
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    # 컴파일 에러 방지용 secrets.properties 및 google-services.json 더미 생성
+    - name: Create dummy secrets.properties and google-services.json for CI
+      run: |
+        if [ -f "secrets.defaults.properties" ]; then
+          cp secrets.defaults.properties secrets.properties
+        else
+          echo "BASE_URL=https://api.example.com/" > secrets.properties
+        fi
+        
+        echo '{
+          "project_info": {
+            "project_number": "1234567890",
+            "project_id": "dummy-project"
+          },
+          "client": [
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:1234567890:android:1234567890",
+                "android_client_info": {
+                  "package_name": "com.example.yakallim"
+                }
+              },
+              "api_key": [
+                {
+                  "current_key": "dummy-api-key"
+                }
+              ],
+              "services": {
+                "appinvite_service": {
+                  "status": 1
+                }
+              }
+            }
+          ],
+          "configuration_version": "1"
+        }' > app/google-services.json
+
+    # 분석 데이터베이스 수집용 수동 빌드
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon
+
+    # 분석 실행 및 결과 업로드
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{matrix.language}}"
