@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    // Slack 알림 연동 환경 변수
+    environment {
+        SLACK_CREDENTIAL_ID = 'slack-bot-token'
+        SLACK_CHANNEL       = '#app-deploy-alerts'
+    }
+
     parameters {
         booleanParam(
             name: 'CLEAN_BUILD',
@@ -78,6 +84,41 @@ pipeline {
             steps {
                 // APK 아카이빙
                 archiveArtifacts artifacts: 'app/build/outputs/apk/debug/*.apk', followSymlinks: false
+            }
+        }
+    }
+
+    // 파이프라인 빌드 결과에 따른 Slack 봇 알림 전송
+    post {
+        // 빌드 성공 알림
+        success {
+            script {
+                def successMessage = """
+                    *:white_check_mark: [SUCCESS] Android APK Build Completed*
+                    • *Job:* `${env.JOB_NAME}`
+                    • *Build Number:* #${env.BUILD_NUMBER}
+                    • *Duration:* ${currentBuild.durationString}
+                    • *Link:* <${env.BUILD_URL}|Open Build> | <${env.BUILD_URL}console|Console Log>
+                """.stripIndent().trim()
+                slackSend botUser: true, color: '#36a64f', channel: env.SLACK_CHANNEL, tokenCredentialId: env.SLACK_CREDENTIAL_ID, message: successMessage
+            }
+        }
+
+        // 빌드 실패 알림
+        failure {
+            script {
+                def failureMessage = """
+                    *:x: [FAILURE] Android APK Build Failed*
+                    • *Job:* `${env.JOB_NAME}`
+                    • *Build Number:* #${env.BUILD_NUMBER}
+                    • *Duration:* ${currentBuild.durationString}
+                    • *Build Link:* <${env.BUILD_URL}|Open Build>
+                    • *Failed Console Log:* <${env.BUILD_URL}console|View Logs>
+
+                    *Check Logs:*
+                    실패한 빌드의 상세 에러 원인은 위 Console Log 링크에서 확인하실 수 있습니다.
+                """.stripIndent().trim()
+                slackSend botUser: true, color: '#FF0000', channel: env.SLACK_CHANNEL, tokenCredentialId: env.SLACK_CREDENTIAL_ID, message: failureMessage
             }
         }
     }
