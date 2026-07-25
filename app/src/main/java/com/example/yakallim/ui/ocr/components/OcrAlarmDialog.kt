@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,6 +54,7 @@ import java.util.Locale
 private const val TIME_FORMAT = "%02d:%02d"
 private const val TIME_DELIMITER = ":"
 private const val MAX_INPUT_LENGTH = 2
+private const val MAX_ITEMS_PER_ROW = 3
 
 private const val MIN_HOUR = 0
 private const val MAX_HOUR = 23
@@ -156,94 +158,103 @@ fun OcrAlarmDialog(
                         )
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(space = 8.dp)
-                    ) {
-                        alarmTimes.forEachIndexed { index, time ->
-                            val parts = time.split(TIME_DELIMITER)
-                            val hourVal = parts.getOrNull(0) ?: DEFAULT_HOUR_STRING
-                            val minuteVal = parts.getOrNull(1) ?: DEFAULT_MINUTE_STRING
-
-                            Surface(
-                                modifier = Modifier.weight(weight = 1f),
-                                shape = RoundedCornerShape(size = 12.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = ALPHA_SURFACE_BG),
-                                border = BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = ALPHA_BORDER_OUTLINE)
-                                )
+                    Column(verticalArrangement = Arrangement.spacedBy(space = 8.dp)) {
+                        alarmTimes.indices.chunked(MAX_ITEMS_PER_ROW).forEach { chunk ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(space = 8.dp)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(vertical = 12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(space = 4.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(
-                                            R.string.alarm_setting_time_index_short, index + 1
-                                        ),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center,
-                                        modifier = Modifier.fillMaxWidth()
+                                chunk.forEach { index ->
+                                    val time = alarmTimes[index]
+                                    val parts = time.split(TIME_DELIMITER)
+                                    val hourVal = parts.getOrNull(0) ?: DEFAULT_HOUR_STRING
+                                    val minuteVal = parts.getOrNull(1) ?: DEFAULT_MINUTE_STRING
+
+                                    Surface(
+                                        modifier = Modifier.weight(weight = 1f),
+                                        shape = RoundedCornerShape(size = 12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = ALPHA_SURFACE_BG),
+                                        border = BorderStroke(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.outline.copy(alpha = ALPHA_BORDER_OUTLINE)
+                                        )
                                     ) {
-                                        BasicTextField(
-                                            value = hourVal,
-                                            onValueChange = { input ->
-                                                val filtered = input.filter { it.isDigit() }
-                                                    .take(MAX_INPUT_LENGTH)
-                                                alarmTimes[index] =
-                                                    "$filtered$TIME_DELIMITER$minuteVal"
-                                            },
-                                            textStyle = TextStyle(
-                                                fontFamily = MaterialTheme.typography.titleMedium.fontFamily,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                textAlign = TextAlign.Center
-                                            ),
-                                            keyboardOptions = KeyboardOptions(
-                                                keyboardType = KeyboardType.Number,
-                                                imeAction = ImeAction.Next
-                                            ),
-                                            singleLine = true,
-                                            modifier = Modifier.width(width = 28.dp)
-                                        )
-                                        Text(
-                                            text = TIME_DELIMITER,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            modifier = Modifier.padding(horizontal = 2.dp)
-                                        )
-                                        BasicTextField(
-                                            value = minuteVal,
-                                            onValueChange = { input ->
-                                                val filtered = input.filter { it.isDigit() }
-                                                    .take(MAX_INPUT_LENGTH)
-                                                alarmTimes[index] =
-                                                    "$hourVal$TIME_DELIMITER$filtered"
-                                            },
-                                            textStyle = TextStyle(
-                                                fontFamily = MaterialTheme.typography.titleMedium.fontFamily,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                textAlign = TextAlign.Center
-                                            ),
-                                            keyboardOptions = KeyboardOptions(
-                                                keyboardType = KeyboardType.Number,
-                                                imeAction = ImeAction.Done
-                                            ),
-                                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                                            singleLine = true,
-                                            modifier = Modifier.width(width = 28.dp)
-                                        )
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 12.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(space = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = stringResource(
+                                                    R.string.alarm_setting_time_index_short,
+                                                    index + 1
+                                                ),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                BasicTextField(
+                                                    value = hourVal,
+                                                    onValueChange = { input ->
+                                                        val filtered = input.filter { it.isDigit() }
+                                                            .take(MAX_INPUT_LENGTH)
+                                                        alarmTimes[index] =
+                                                            "$filtered$TIME_DELIMITER$minuteVal"
+                                                    },
+                                                    textStyle = TextStyle(
+                                                        fontFamily = MaterialTheme.typography.titleMedium.fontFamily,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        textAlign = TextAlign.Center
+                                                    ),
+                                                    keyboardOptions = KeyboardOptions(
+                                                        keyboardType = KeyboardType.Number,
+                                                        imeAction = ImeAction.Next
+                                                    ),
+                                                    singleLine = true,
+                                                    modifier = Modifier.width(width = 28.dp)
+                                                )
+                                                Text(
+                                                    text = TIME_DELIMITER,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontWeight = FontWeight.Bold,
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                                )
+                                                BasicTextField(
+                                                    value = minuteVal,
+                                                    onValueChange = { input ->
+                                                        val filtered = input.filter { it.isDigit() }
+                                                            .take(MAX_INPUT_LENGTH)
+                                                        alarmTimes[index] =
+                                                            "$hourVal$TIME_DELIMITER$filtered"
+                                                    },
+                                                    textStyle = TextStyle(
+                                                        fontFamily = MaterialTheme.typography.titleMedium.fontFamily,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        textAlign = TextAlign.Center
+                                                    ),
+                                                    keyboardOptions = KeyboardOptions(
+                                                        keyboardType = KeyboardType.Number,
+                                                        imeAction = ImeAction.Done
+                                                    ),
+                                                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                                                    singleLine = true,
+                                                    modifier = Modifier.width(width = 28.dp)
+                                                )
+                                            }
+                                        }
                                     }
+                                }
+                                repeat(MAX_ITEMS_PER_ROW - chunk.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
                         }
