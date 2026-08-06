@@ -4,8 +4,8 @@ import com.example.yakallim.data.datasource.local.FcmLocalDataSource
 import com.example.yakallim.data.datasource.local.FcmLocalDataSourceImpl
 import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.data.datasource.local.OcrLocalDataSourceImpl
+import com.example.yakallim.data.datasource.remote.OcrKtorRemoteDataSourceImpl
 import com.example.yakallim.data.datasource.remote.OcrRemoteDataSource
-import com.example.yakallim.data.datasource.remote.OcrRemoteDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -31,6 +31,6 @@ abstract class DataSourceModule {
     @Binds
     @Singleton
     abstract fun bindOcrRemoteDataSource(
-        ocrRemoteDataSourceImpl: OcrRemoteDataSourceImpl
+        ocrKtorRemoteDataSourceImpl: OcrKtorRemoteDataSourceImpl
     ): OcrRemoteDataSource
 }
