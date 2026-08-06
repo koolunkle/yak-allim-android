@@ -7,8 +7,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.yakallim.R
-import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingObserver
-import com.example.yakallim.domain.infrastructure.image.ImageProcessor
+import com.example.yakallim.data.infrastructure.image.ImageProcessor
+import com.example.yakallim.domain.notification.PushNotificationObserver
 import com.example.yakallim.domain.usecase.RequestPrescriptionUseCase
 import com.example.yakallim.domain.usecase.CancelAlarmUseCase
 import com.example.yakallim.domain.usecase.CancelPrescriptionUseCase
@@ -50,7 +50,7 @@ class OcrViewModel @Inject constructor(
     private val observeProgressUseCase: ObserveProgressUseCase,
     private val getDetailAlarmUseCase: GetDetailAlarmUseCase,
     private val imageProcessor: ImageProcessor,
-    private val firebaseMessagingObserver: FirebaseMessagingObserver,
+    private val pushNotificationObserver: PushNotificationObserver,
     @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -258,8 +258,8 @@ class OcrViewModel @Inject constructor(
                         )
                     )
                 }
-                val firebaseMessage = try {
-                    firebaseMessagingObserver.messages.filter { it.jobId == jobId }
+                val pushMessage = try {
+                    pushNotificationObserver.messages.filter { it.jobId == jobId }
                         .first()
                 } catch (ex: Exception) {
                     _uiState.update {
@@ -271,13 +271,13 @@ class OcrViewModel @Inject constructor(
                     return@launch
                 }
 
-                if (firebaseMessage.status == JobStatus.COMPLETED) {
+                if (pushMessage.status == JobStatus.COMPLETED) {
                     fetchAnalysisResult(jobId)
                 } else {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = if (firebaseMessage.errorMessage != null) OcrError.ServerError(firebaseMessage.errorMessage) else OcrError.AnalysisFailed
+                            error = if (pushMessage.errorMessage != null) OcrError.ServerError(pushMessage.errorMessage) else OcrError.AnalysisFailed
                         )
                     }
                 }

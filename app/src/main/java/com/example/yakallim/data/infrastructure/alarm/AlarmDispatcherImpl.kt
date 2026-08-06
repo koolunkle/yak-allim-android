@@ -14,7 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.example.yakallim.MainActivity
 import com.example.yakallim.R
-import com.example.yakallim.domain.infrastructure.alarm.AlarmDispatcher
+import com.example.yakallim.domain.alarm.AlarmDispatcher
 import com.example.yakallim.util.notificationManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject

@@ -1,6 +1,6 @@
 package com.example.yakallim.domain.usecase
 
-import com.example.yakallim.domain.infrastructure.alarm.AlarmScheduler
+import com.example.yakallim.domain.alarm.AlarmScheduler
 import com.example.yakallim.domain.model.Alarm
 import javax.inject.Inject
 

@@ -3,7 +3,7 @@ package com.example.yakallim.data.infrastructure.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.example.yakallim.domain.infrastructure.alarm.AlarmDispatcher
+import com.example.yakallim.domain.alarm.AlarmDispatcher
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors

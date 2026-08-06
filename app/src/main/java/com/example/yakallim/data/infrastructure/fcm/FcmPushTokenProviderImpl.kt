@@ -2,7 +2,7 @@ package com.example.yakallim.data.infrastructure.fcm
 
 import android.util.Log
 import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSource
-import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingTokenProvider
+import com.example.yakallim.domain.notification.PushTokenProvider
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -12,9 +12,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FirebaseMessagingTokenProviderImpl @Inject constructor(
+class FcmPushTokenProviderImpl @Inject constructor(
     private val firebaseMessagingLocalDataSource: FirebaseMessagingLocalDataSource
-) : FirebaseMessagingTokenProvider {
+) : PushTokenProvider {
 
     private val _fcmToken = MutableSharedFlow<String>(extraBufferCapacity = 1)
     override val fcmToken: Flow<String> = _fcmToken
@@ -28,7 +28,7 @@ class FirebaseMessagingTokenProviderImpl @Inject constructor(
         registerFcmToken()
 
         return withTimeoutOrNull(5000L) { fcmToken.first() } ?: run {
-            Log.w("FirebaseMessagingTokenProviderImpl", "FCM 토큰 등록 시간 초과")
+            Log.w("FcmPushTokenProviderImpl", "FCM 토큰 등록 시간 초과")
             null
         }
     }
@@ -41,7 +41,7 @@ class FirebaseMessagingTokenProviderImpl @Inject constructor(
         try {
             FirebaseMessaging.getInstance().register()
         } catch (e: Exception) {
-            Log.e("FirebaseMessagingTokenProviderImpl", "FCM 토큰 등록 요청 실패", e)
+            Log.e("FcmPushTokenProviderImpl", "FCM 토큰 등록 요청 실패", e)
         }
     }
 }

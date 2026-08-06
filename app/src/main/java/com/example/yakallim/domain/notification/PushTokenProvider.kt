@@ -1,8 +1,8 @@
-package com.example.yakallim.domain.infrastructure.fcm
+package com.example.yakallim.domain.notification
 
 import kotlinx.coroutines.flow.Flow
 
-interface FirebaseMessagingTokenProvider {
+interface PushTokenProvider {
     val fcmToken: Flow<String>
 
     suspend fun getFcmToken(): String?

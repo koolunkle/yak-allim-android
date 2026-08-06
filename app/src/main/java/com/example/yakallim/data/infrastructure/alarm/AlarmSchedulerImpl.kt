@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.example.yakallim.data.datasource.local.preference.AlarmPreference
-import com.example.yakallim.domain.infrastructure.alarm.AlarmScheduler
+import com.example.yakallim.domain.alarm.AlarmScheduler
 import com.example.yakallim.domain.model.Alarm
 import com.example.yakallim.util.alarmManager
 import dagger.hilt.android.qualifiers.ApplicationContext

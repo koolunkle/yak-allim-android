@@ -11,9 +11,9 @@ import com.example.yakallim.MainActivity
 import com.example.yakallim.R
 import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSource
 import com.example.yakallim.data.datasource.local.OcrLocalDataSource
-import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingObserver
-import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingTokenProvider
-import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessage
+import com.example.yakallim.domain.notification.PushNotificationObserver
+import com.example.yakallim.domain.notification.PushTokenProvider
+import com.example.yakallim.domain.notification.PushMessage
 import com.example.yakallim.domain.model.JobStatus
 import com.example.yakallim.util.notificationManager
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -26,18 +26,18 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class FirebaseMessagingService : FirebaseMessagingService() {
+class FcmMessagingService : FirebaseMessagingService() {
 
     companion object {
-        private const val TAG = "FirebaseMessagingService"
+        private const val TAG = "FcmMessagingService"
         private const val CHANNEL_ID = "OCR_FCM_CHANNEL"
     }
 
     @Inject
-    lateinit var firebaseMessagingObserver: FirebaseMessagingObserver
+    lateinit var pushNotificationObserver: PushNotificationObserver
 
     @Inject
-    lateinit var firebaseMessagingTokenProvider: FirebaseMessagingTokenProvider
+    lateinit var pushTokenProvider: PushTokenProvider
 
     @Inject
     lateinit var firebaseMessagingLocalDataSource: FirebaseMessagingLocalDataSource
@@ -52,7 +52,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         super.onRegistered(token)
         coroutineScope.launch {
             firebaseMessagingLocalDataSource.saveFcmToken(token)
-            firebaseMessagingTokenProvider.emitToken(token)
+            pushTokenProvider.emitToken(token)
         }
     }
 
@@ -75,8 +75,8 @@ class FirebaseMessagingService : FirebaseMessagingService() {
             val isSuccess = status?.equals(FcmPayloadSpec.STATUS_COMPLETED, ignoreCase = true) == true
             val errorMessage = message.data[FcmPayloadSpec.KEY_ERROR]
 
-            firebaseMessagingObserver.emitMessage(
-                FirebaseMessage(
+            pushNotificationObserver.emitMessage(
+                PushMessage(
                     jobId = jobId,
                     status = if (isSuccess) JobStatus.COMPLETED else JobStatus.FAILED,
                     errorMessage = errorMessage

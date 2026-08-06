@@ -6,8 +6,8 @@ import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.data.datasource.remote.OcrRemoteDataSource
 import com.example.yakallim.data.datasource.remote.dto.OcrResponse
 import com.example.yakallim.data.mapper.toDomain
-import com.example.yakallim.domain.infrastructure.fcm.FirebaseMessagingTokenProvider
-import com.example.yakallim.domain.infrastructure.image.ImageProcessor
+import com.example.yakallim.data.infrastructure.image.ImageProcessor
+import com.example.yakallim.domain.notification.PushTokenProvider
 import com.example.yakallim.domain.model.Prescription
 import com.example.yakallim.domain.model.Progress
 import com.example.yakallim.domain.repository.OcrRepository
@@ -24,7 +24,7 @@ import javax.inject.Inject
 class OcrRepositoryImpl @Inject constructor(
     private val ocrRemoteDataSource: OcrRemoteDataSource,
     private val imageProcessor: ImageProcessor,
-    private val firebaseMessagingTokenProvider: FirebaseMessagingTokenProvider,
+    private val pushTokenProvider: PushTokenProvider,
     private val ocrLocalDataSource: OcrLocalDataSource,
     private val moshi: Moshi,
     @param:ApplicationContext private val context: Context
@@ -33,7 +33,7 @@ class OcrRepositoryImpl @Inject constructor(
     override suspend fun requestPrescription(imageFile: File): String =
         withContext(Dispatchers.IO) {
             val processedFile = imageProcessor.preprocess(imageFile)
-            val fcmToken = firebaseMessagingTokenProvider.getFcmToken()
+            val fcmToken = pushTokenProvider.getFcmToken()
 
             val jobId = ocrRemoteDataSource.enqueueOcrJob(processedFile, fcmToken).jobId
             ocrLocalDataSource.savePendingJobId(jobId)

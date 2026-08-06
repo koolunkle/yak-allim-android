@@ -1,8 +1,8 @@
-package com.example.yakallim.domain.infrastructure.fcm
+package com.example.yakallim.domain.notification
 
 import com.example.yakallim.domain.model.JobStatus
 
-data class FirebaseMessage(
+data class PushMessage(
     val jobId: String,
     val status: JobStatus,
     val errorMessage: String? = null

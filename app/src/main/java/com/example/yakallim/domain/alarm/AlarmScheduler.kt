@@ -1,4 +1,4 @@
-package com.example.yakallim.domain.infrastructure.alarm
+package com.example.yakallim.domain.alarm
 
 import com.example.yakallim.domain.model.Alarm
 

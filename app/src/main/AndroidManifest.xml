@@ -37,7 +37,7 @@
             android:name=".data.infrastructure.alarm.AlarmReceiver"
             android:exported="false" />
         <service
-            android:name=".data.infrastructure.fcm.FirebaseMessagingService"
+            android:name=".data.infrastructure.fcm.FcmMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
