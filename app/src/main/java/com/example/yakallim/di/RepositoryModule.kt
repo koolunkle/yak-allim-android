@@ -16,6 +16,8 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import javax.inject.Singleton
 
+import com.example.yakallim.data.datasource.remote.OcrRemoteDataSource
+
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
@@ -23,21 +25,19 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideOcrRepository(
-        apiService: OcrApiService,
+        ocrRemoteDataSource: OcrRemoteDataSource,
         imageProcessor: ImageProcessor,
         firebaseMessagingTokenProvider: FirebaseMessagingTokenProvider,
         ocrLocalDataSource: OcrLocalDataSource,
         moshi: Moshi,
-        @SseClient okHttpClient: OkHttpClient,
         @ApplicationContext context: Context
     ): OcrRepository {
         return OcrRepositoryImpl(
-            apiService,
+            ocrRemoteDataSource,
             imageProcessor,
             firebaseMessagingTokenProvider,
             ocrLocalDataSource,
             moshi,
-            okHttpClient,
             context
         )
     }

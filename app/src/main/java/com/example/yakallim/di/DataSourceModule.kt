@@ -4,6 +4,8 @@ import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSour
 import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSourceImpl
 import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.data.datasource.local.OcrLocalDataSourceImpl
+import com.example.yakallim.data.datasource.remote.OcrRemoteDataSource
+import com.example.yakallim.data.datasource.remote.OcrRemoteDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -25,4 +27,10 @@ abstract class DataSourceModule {
     abstract fun bindOcrLocalDataSource(
         ocrLocalDataSourceImpl: OcrLocalDataSourceImpl
     ): OcrLocalDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindOcrRemoteDataSource(
+        ocrRemoteDataSourceImpl: OcrRemoteDataSourceImpl
+    ): OcrRemoteDataSource
 }
