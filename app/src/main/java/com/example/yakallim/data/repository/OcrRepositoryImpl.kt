@@ -5,19 +5,20 @@ import android.util.Log
 import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.data.datasource.remote.OcrRemoteDataSource
 import com.example.yakallim.data.datasource.remote.dto.OcrResponse
-import com.example.yakallim.data.mapper.toDomain
 import com.example.yakallim.data.infrastructure.image.ImageProcessor
-import com.example.yakallim.domain.notification.PushTokenProvider
+import com.example.yakallim.data.mapper.toDomain
 import com.example.yakallim.domain.model.Prescription
 import com.example.yakallim.domain.model.Progress
+import com.example.yakallim.domain.notification.PushTokenProvider
 import com.example.yakallim.domain.repository.OcrRepository
-import com.squareup.moshi.Moshi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import javax.inject.Inject
 
@@ -26,7 +27,7 @@ class OcrRepositoryImpl @Inject constructor(
     private val imageProcessor: ImageProcessor,
     private val pushTokenProvider: PushTokenProvider,
     private val ocrLocalDataSource: OcrLocalDataSource,
-    private val moshi: Moshi,
+    private val json: Json,
     @param:ApplicationContext private val context: Context
 ) : OcrRepository {
 
@@ -48,9 +49,8 @@ class OcrRepositoryImpl @Inject constructor(
                 ?: throw NoSuchElementException("OCR job [${ocrJob.jobId}] completed, but the result data is missing.")
 
             try {
-                val adapter = moshi.adapter(OcrResponse::class.java)
-                val json = adapter.toJson(ocrJobResult)
-                ocrLocalDataSource.saveLastPrescriptionJson(json)
+                val jsonString = json.encodeToString(ocrJobResult)
+                ocrLocalDataSource.saveLastPrescriptionJson(jsonString)
                 val srcCache = File(context.cacheDir, "ocr_image_$jobId.jpg")
                 if (srcCache.exists()) {
                     val dstCache = File(context.cacheDir, "ocr_image_last.jpg")
@@ -95,11 +95,10 @@ class OcrRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLastPrescription(): Prescription? {
-        val json = ocrLocalDataSource.getLastPrescriptionJson() ?: return null
+        val jsonString = ocrLocalDataSource.getLastPrescriptionJson() ?: return null
         return try {
-            val adapter = moshi.adapter(OcrResponse::class.java)
-            val ocrJobResult = adapter.fromJson(json)
-            ocrJobResult?.toDomain()
+            val ocrJobResult = json.decodeFromString<OcrResponse>(jsonString)
+            ocrJobResult.toDomain()
         } catch (e: Exception) {
             Log.e("OcrRepositoryImpl", "마지막 분석 결과 복원 실패: ${e.message}")
             null

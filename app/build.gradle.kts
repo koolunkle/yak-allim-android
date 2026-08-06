@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
     alias(libs.plugins.secrets.gradle.plugin)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 secrets {
@@ -96,12 +97,11 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.retrofit.core)
-    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging)
     implementation(libs.okhttp.sse)
-    implementation(libs.moshi.core)
-    ksp(libs.moshi.kotlin.codegen)
 
     // =================================================================
     // Media & Storage

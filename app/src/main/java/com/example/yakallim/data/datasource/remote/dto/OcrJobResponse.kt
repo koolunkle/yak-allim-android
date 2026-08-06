@@ -1,12 +1,12 @@
 package com.example.yakallim.data.datasource.remote.dto
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class OcrJobResponse(
-    @field:Json(name = "jobId") val jobId: String,
-    @field:Json(name = "status") val status: String? = null,
-    @field:Json(name = "result") val result: OcrResponse? = null,
-    @field:Json(name = "error") val error: String? = null
+    @SerialName("jobId") val jobId: String,
+    @SerialName("status") val status: String? = null,
+    @SerialName("result") val result: OcrResponse? = null,
+    @SerialName("error") val error: String? = null
 )

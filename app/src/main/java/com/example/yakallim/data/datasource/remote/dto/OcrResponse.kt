@@ -1,40 +1,40 @@
 package com.example.yakallim.data.datasource.remote.dto
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class OcrResponse(
-    @field:Json(name = "status") val status: String? = null,
-    @field:Json(name = "fileName") val fileName: String,
-    @field:Json(name = "message") val message: String,
-    @field:Json(name = "textBlocks") val textBlocks: List<TextBlockResponse>? = emptyList(),
-    @field:Json(name = "prescriptions") val prescriptions: List<PrescriptionResponse>? = emptyList()
+    @SerialName("status") val status: String? = null,
+    @SerialName("fileName") val fileName: String,
+    @SerialName("message") val message: String,
+    @SerialName("textBlocks") val textBlocks: List<TextBlockResponse>? = emptyList(),
+    @SerialName("prescriptions") val prescriptions: List<PrescriptionResponse>? = emptyList()
 ) {
-    @JsonClass(generateAdapter = true)
+    @Serializable
     data class Coordinate(
-        @field:Json(name = "x") val x: Int,
-        @field:Json(name = "y") val y: Int
+        @SerialName("x") val x: Int,
+        @SerialName("y") val y: Int
     )
 
-    @JsonClass(generateAdapter = true)
+    @Serializable
     data class TextBlockResponse(
-        @field:Json(name = "text") val text: String,
-        @field:Json(name = "confidence") val confidence: Float,
-        @field:Json(name = "bounds") val bounds: List<Coordinate> = emptyList()
+        @SerialName("text") val text: String,
+        @SerialName("confidence") val confidence: Float,
+        @SerialName("bounds") val bounds: List<Coordinate> = emptyList()
     )
 
-    @JsonClass(generateAdapter = true)
+    @Serializable
     data class Polygon(
-        @field:Json(name = "points") val points: List<Coordinate> = emptyList()
+        @SerialName("points") val points: List<Coordinate> = emptyList()
     )
 
-    @JsonClass(generateAdapter = true)
+    @Serializable
     data class PrescriptionResponse(
-        @field:Json(name = "medicineName") val medicineName: String?,
-        @field:Json(name = "dosagePerTake") val dosagePerTake: String? = "",
-        @field:Json(name = "dailyFrequency") val dailyFrequency: Int? = 0,
-        @field:Json(name = "durationDays") val durationDays: Int? = 0,
-        @field:Json(name = "bounds") val bounds: List<Polygon>? = emptyList()
+        @SerialName("medicineName") val medicineName: String?,
+        @SerialName("dosagePerTake") val dosagePerTake: String? = "",
+        @SerialName("dailyFrequency") val dailyFrequency: Int? = 0,
+        @SerialName("durationDays") val durationDays: Int? = 0,
+        @SerialName("bounds") val bounds: List<Polygon>? = emptyList()
     )
 }

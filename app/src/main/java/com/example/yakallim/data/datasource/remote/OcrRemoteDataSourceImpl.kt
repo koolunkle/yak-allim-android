@@ -7,10 +7,10 @@ import com.example.yakallim.data.datasource.remote.dto.OcrProgressResponse
 import com.example.yakallim.di.SseClient
 import com.example.yakallim.domain.model.JobStatus
 import com.example.yakallim.domain.model.Progress
-import com.squareup.moshi.Moshi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -25,7 +25,7 @@ import javax.inject.Inject
 
 class OcrRemoteDataSourceImpl @Inject constructor(
     private val apiService: OcrApiService,
-    private val moshi: Moshi,
+    private val json: Json,
     @param:SseClient private val okHttpClient: OkHttpClient
 ) : OcrRemoteDataSource {
 
@@ -64,25 +64,22 @@ class OcrRemoteDataSourceImpl @Inject constructor(
             ) {
                 if (type == null || type == "progress" || type == "message") {
                     try {
-                        val adapter = moshi.adapter(OcrProgressResponse::class.java)
-                        val progressResponse = adapter.fromJson(data)
-                        if (progressResponse != null) {
-                            val stepStr = progressResponse.step ?: ""
-                            val domainJobStatus = try {
-                                JobStatus.valueOf(stepStr)
-                            } catch (_: IllegalArgumentException) {
-                                JobStatus.FAILED
-                            }
-                            val isFinished = progressResponse.isFinished
-                            trySend(
-                                Progress(
-                                    jobStatus = domainJobStatus,
-                                    message = progressResponse.message ?: "",
-                                    percent = progressResponse.progress ?: 0,
-                                    isFinished = isFinished
-                                )
-                            )
+                        val progressResponse = json.decodeFromString<OcrProgressResponse>(data)
+                        val stepStr = progressResponse.step ?: ""
+                        val domainJobStatus = try {
+                            JobStatus.valueOf(stepStr)
+                        } catch (_: IllegalArgumentException) {
+                            JobStatus.FAILED
                         }
+                        val isFinished = progressResponse.isFinished
+                        trySend(
+                            Progress(
+                                jobStatus = domainJobStatus,
+                                message = progressResponse.message ?: "",
+                                percent = progressResponse.progress ?: 0,
+                                isFinished = isFinished
+                            )
+                        )
                     } catch (_: Exception) {
                     }
                 }
