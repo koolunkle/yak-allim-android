@@ -34,16 +34,26 @@ class OcrKtorRemoteDataSourceImpl @Inject constructor(
 ) : OcrRemoteDataSource {
 
     override suspend fun enqueueOcrJob(imageFile: File, fcmToken: String?): OcrJobResponse {
+        val contentType = when (imageFile.extension.lowercase()) {
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            else -> "image/jpeg"
+        }
+
         return httpClient.post("${BuildConfig.BASE_URL}api/v1/ocr/enqueue") {
             setBody(
                 MultiPartFormDataContent(
                     formData {
-                        append("file", imageFile.readBytes(), Headers.build {
-                            append(HttpHeaders.ContentType, "image/*")
-                            append(HttpHeaders.ContentDisposition, "filename=\"${imageFile.name}\"")
-                        })
+                        append(
+                            key = "file",
+                            value = imageFile.readBytes(),
+                            headers = Headers.build {
+                                append(HttpHeaders.ContentType, contentType)
+                                append(HttpHeaders.ContentDisposition, "filename=\"${imageFile.name}\"")
+                            }
+                        )
                         if (!fcmToken.isNullOrBlank()) {
-                            append("fcmToken", fcmToken)
+                            append(key = "fcmToken", value = fcmToken)
                         }
                     }
                 )
