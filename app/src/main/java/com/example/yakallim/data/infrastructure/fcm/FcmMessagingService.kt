@@ -14,7 +14,7 @@ import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.domain.notification.PushNotificationObserver
 import com.example.yakallim.domain.notification.PushTokenProvider
 import com.example.yakallim.domain.notification.PushMessage
-import com.example.yakallim.domain.model.JobStatus
+import com.example.yakallim.domain.model.OcrJobStatus
 import com.example.yakallim.util.notificationManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -78,7 +78,7 @@ class FcmMessagingService : FirebaseMessagingService() {
             pushNotificationObserver.emitMessage(
                 PushMessage(
                     jobId = jobId,
-                    status = if (isSuccess) JobStatus.COMPLETED else JobStatus.FAILED,
+                    status = if (isSuccess) OcrJobStatus.COMPLETED else OcrJobStatus.FAILED,
                     errorMessage = errorMessage
                 )
             )
