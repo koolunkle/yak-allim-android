@@ -9,7 +9,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.yakallim.MainActivity
 import com.example.yakallim.R
-import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSource
+import com.example.yakallim.data.datasource.local.FcmLocalDataSource
 import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.domain.notification.PushNotificationObserver
 import com.example.yakallim.domain.notification.PushTokenProvider
@@ -40,7 +40,7 @@ class FcmMessagingService : FirebaseMessagingService() {
     lateinit var pushTokenProvider: PushTokenProvider
 
     @Inject
-    lateinit var firebaseMessagingLocalDataSource: FirebaseMessagingLocalDataSource
+    lateinit var fcmLocalDataSource: FcmLocalDataSource
 
     @Inject
     lateinit var ocrLocalDataSource: OcrLocalDataSource
@@ -51,7 +51,7 @@ class FcmMessagingService : FirebaseMessagingService() {
     override fun onRegistered(token: String) {
         super.onRegistered(token)
         coroutineScope.launch {
-            firebaseMessagingLocalDataSource.saveFcmToken(token)
+            fcmLocalDataSource.saveFcmToken(token)
             pushTokenProvider.emitToken(token)
         }
     }

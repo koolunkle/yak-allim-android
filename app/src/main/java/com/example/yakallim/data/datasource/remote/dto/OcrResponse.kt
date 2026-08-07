@@ -9,7 +9,7 @@ data class OcrResponse(
     @SerialName("fileName") val fileName: String,
     @SerialName("message") val message: String,
     @SerialName("textBlocks") val textBlocks: List<TextBlockResponse>? = emptyList(),
-    @SerialName("prescriptions") val prescriptions: List<PrescriptionResponse>? = emptyList()
+    @SerialName("medicines") val medicines: List<MedicineResponse>? = emptyList()
 ) {
     @Serializable
     data class Coordinate(
@@ -30,7 +30,7 @@ data class OcrResponse(
     )
 
     @Serializable
-    data class PrescriptionResponse(
+    data class MedicineResponse(
         @SerialName("medicineName") val medicineName: String?,
         @SerialName("dosagePerTake") val dosagePerTake: String? = "",
         @SerialName("dailyFrequency") val dailyFrequency: Int? = 0,

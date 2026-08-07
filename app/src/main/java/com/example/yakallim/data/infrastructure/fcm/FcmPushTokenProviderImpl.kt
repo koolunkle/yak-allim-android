@@ -1,7 +1,7 @@
 package com.example.yakallim.data.infrastructure.fcm
 
 import android.util.Log
-import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSource
+import com.example.yakallim.data.datasource.local.FcmLocalDataSource
 import com.example.yakallim.domain.notification.PushTokenProvider
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.Flow
@@ -13,14 +13,14 @@ import javax.inject.Singleton
 
 @Singleton
 class FcmPushTokenProviderImpl @Inject constructor(
-    private val firebaseMessagingLocalDataSource: FirebaseMessagingLocalDataSource
+    private val fcmLocalDataSource: FcmLocalDataSource
 ) : PushTokenProvider {
 
     private val _fcmToken = MutableSharedFlow<String>(extraBufferCapacity = 1)
     override val fcmToken: Flow<String> = _fcmToken
 
     override suspend fun getFcmToken(): String? {
-        val cachedToken = firebaseMessagingLocalDataSource.getFcmToken()
+        val cachedToken = fcmLocalDataSource.getFcmToken()
         if (!cachedToken.isNullOrBlank()) {
             return cachedToken
         }

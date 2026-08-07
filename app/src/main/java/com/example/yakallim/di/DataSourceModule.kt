@@ -1,7 +1,7 @@
 package com.example.yakallim.di
 
-import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSource
-import com.example.yakallim.data.datasource.local.FirebaseMessagingLocalDataSourceImpl
+import com.example.yakallim.data.datasource.local.FcmLocalDataSource
+import com.example.yakallim.data.datasource.local.FcmLocalDataSourceImpl
 import com.example.yakallim.data.datasource.local.OcrLocalDataSource
 import com.example.yakallim.data.datasource.local.OcrLocalDataSourceImpl
 import com.example.yakallim.data.datasource.remote.OcrRemoteDataSource
@@ -18,9 +18,9 @@ abstract class DataSourceModule {
 
     @Binds
     @Singleton
-    abstract fun bindFirebaseMessagingLocalDataSource(
-        firebaseMessagingLocalDataSourceImpl: FirebaseMessagingLocalDataSourceImpl
-    ): FirebaseMessagingLocalDataSource
+    abstract fun bindFcmLocalDataSource(
+        fcmLocalDataSourceImpl: FcmLocalDataSourceImpl
+    ): FcmLocalDataSource
 
     @Binds
     @Singleton

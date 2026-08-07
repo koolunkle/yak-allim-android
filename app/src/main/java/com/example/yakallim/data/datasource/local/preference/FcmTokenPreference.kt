@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FirebaseMessagingTokenPreference @Inject constructor(
+class FcmTokenPreference @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) {
     private val fcmTokenKey = stringPreferencesKey("fcm_token")
