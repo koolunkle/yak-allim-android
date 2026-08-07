@@ -1,93 +1,101 @@
-name: "CodeQL Analysis"
+name: "CodeQL Security Analysis"
 
+# 1. 트리거 조건: 특정 브랜치 이벤트 및 정기 실행
 on:
   push:
     branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
   schedule:
-    - cron: '0 19 * * 0' # 매주 월요일 오전 4시(KST) 주기적 검사
+    - cron: '0 19 * * 0' # 매주 월요일 04:00 (KST) 정기 보안 스캔
+
+# 2. 실행 권한: 레포지토리 읽기 및 보안 스캔 결과 업로드 권한
+permissions:
+  actions: read
+  contents: read
+  security-events: write
 
 jobs:
   analyze:
-    name: Analyze
+    name: Analyze (java-kotlin)
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'java-kotlin' ]
+    timeout-minutes: 60 # 무한 대기 방지용 타임아웃 (60분)
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+      # Step 1. 소스코드 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v5
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      # Step 2. 빌드 환경에 JDK 17 설치
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      # Step 3. Gradle 환경 및 라이브러리 의존성 캐시 설정
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false # 브랜치별 최신 의존성 캐시 업데이트 허용
 
-    # 컴파일 에러 방지용 secrets.properties 및 google-services.json 더미 생성
-    - name: Create dummy secrets.properties and google-services.json for CI
-      run: |
-        if [ -f "secrets.defaults.properties" ]; then
-          cp secrets.defaults.properties secrets.properties
-        else
-          echo "BASE_URL=https://api.example.com/" > secrets.properties
-        fi
-        
-        echo '{
-          "project_info": {
-            "project_number": "1234567890",
-            "project_id": "dummy-project"
-          },
-          "client": [
-            {
-              "client_info": {
-                "mobilesdk_app_id": "1:1234567890:android:1234567890",
-                "android_client_info": {
-                  "package_name": "com.example.yakallim"
-                }
-              },
-              "api_key": [
-                {
-                  "current_key": "dummy-api-key"
-                }
-              ],
-              "services": {
-                "appinvite_service": {
-                  "status": 1
+      # Step 4. CI 빌드를 위한 더미 설정 파일 생성 (secrets.properties & google-services.json)
+      # - 빌드 타임 키 및 Firebase 구성 정보 누락으로 인한 컴파일 에러 방지
+      - name: Create dummy secrets.properties and google-services.json for CI
+        run: |
+          if [ -f "secrets.defaults.properties" ]; then
+            cp secrets.defaults.properties secrets.properties
+          else
+            echo "BASE_URL=https://api.example.com/" > secrets.properties
+          fi
+          
+          echo '{
+            "project_info": {
+              "project_number": "1234567890",
+              "project_id": "dummy-project"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:1234567890",
+                  "android_client_info": {
+                    "package_name": "com.example.yakallim"
+                  }
+                },
+                "api_key": [
+                  {
+                    "current_key": "dummy-api-key"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "status": 1
+                  }
                 }
               }
-            }
-          ],
-          "configuration_version": "1"
-        }' > app/google-services.json
+            ],
+            "configuration_version": "1"
+          }' > app/google-services.json
 
-    # CodeQL 도구 초기화 및 언어 설정
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: manual
-        # 정밀 진단용 추가 쿼리 설정
-        # queries: security-extended,security-and-quality
+      # Step 5. CodeQL 도구 초기화 (수동 빌드 모드)
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          build-mode: manual # 직접 컴파일 과정을 추적하도록 설정
 
-    # 분석 데이터베이스 수집용 수동 빌드
-    - name: Build with Gradle
-      run: ./gradlew clean assembleDebug --no-daemon --no-build-cache
+      # Step 6. CodeQL 분석을 위한 소스코드 컴파일 (assembleDebug)
+      # - --no-build-cache: CodeQL 소스 추적 누락 방지를 위해 빌드 캐시 비활성화
+      # - --no-daemon & jvmargs: 러너 메모리 고갈(OOM) 방지
+      - name: Build with Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --no-build-cache -Dorg.gradle.jvmargs="-Xmx3g -XX:MaxMetaspaceSize=512m"
 
-    # 분석 실행 및 결과 업로드
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:${{matrix.language}}"
+      # Step 7. 정적 분석 수행 및 보안 결과 업로드
+      # - ram: 5120: CodeQL 전용 메모리를 5GB로 제한하여 러너 다운 방지
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:java-kotlin"
+          ram: 5120
