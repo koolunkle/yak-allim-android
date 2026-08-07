@@ -1,6 +1,6 @@
 package com.example.yakallim.domain.model
 
-enum class OcrJobStatus {
+enum class JobStatus {
     ENQUEUED,
     IMAGE_PROCESSING,
     TEXT_DETECTION,

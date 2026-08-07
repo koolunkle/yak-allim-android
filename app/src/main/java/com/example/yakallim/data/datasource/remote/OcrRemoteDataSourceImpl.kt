@@ -5,8 +5,8 @@ import com.example.yakallim.data.datasource.remote.api.OcrApiService
 import com.example.yakallim.data.datasource.remote.dto.OcrJobResponse
 import com.example.yakallim.data.datasource.remote.dto.OcrProgressResponse
 import com.example.yakallim.di.SseClient
-import com.example.yakallim.domain.model.OcrJobStatus
-import com.example.yakallim.domain.model.OcrProgress
+import com.example.yakallim.domain.model.JobStatus
+import com.example.yakallim.domain.model.Progress
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -45,7 +45,7 @@ class OcrRemoteDataSourceImpl @Inject constructor(
         apiService.cancelOcrJob(jobId)
     }
 
-    override fun observeOcrProgress(jobId: String): Flow<OcrProgress> = callbackFlow {
+    override fun observeOcrProgress(jobId: String): Flow<Progress> = callbackFlow {
         val request = okhttp3.Request.Builder()
             .url("${BuildConfig.BASE_URL}api/v1/ocr/jobs/$jobId/progress")
             .header("Accept", "text/event-stream")
@@ -67,13 +67,13 @@ class OcrRemoteDataSourceImpl @Inject constructor(
                         val progressResponse = json.decodeFromString<OcrProgressResponse>(data)
                         val stepStr = progressResponse.step ?: ""
                         val domainJobStatus = try {
-                            OcrJobStatus.valueOf(stepStr)
+                            JobStatus.valueOf(stepStr)
                         } catch (_: IllegalArgumentException) {
-                            OcrJobStatus.FAILED
+                            JobStatus.FAILED
                         }
                         val isFinished = progressResponse.isFinished
                         trySend(
-                            OcrProgress(
+                            Progress(
                                 jobStatus = domainJobStatus,
                                 message = progressResponse.message ?: "",
                                 percent = progressResponse.progress ?: 0,

@@ -54,7 +54,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.yakallim.R
-import com.example.yakallim.domain.model.Medicine
+import com.example.yakallim.domain.model.PrescribedMedicine
 import com.example.yakallim.domain.model.Alarm
 import com.example.yakallim.ui.theme.HighlightCoral
 import com.example.yakallim.ui.theme.MintBorder
@@ -68,7 +68,7 @@ import com.example.yakallim.ui.theme.Warning
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun OcrMedicineCard(
-    medicineInfo: Medicine,
+    medicineInfo: PrescribedMedicine,
     isAlarmRegistered: Boolean,
     alarm: Alarm?,
     alarmSoundName: String,

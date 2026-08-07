@@ -20,7 +20,7 @@ import com.example.yakallim.domain.usecase.GetPendingPrescriptionUseCase
 import com.example.yakallim.domain.usecase.ScheduleAlarmUseCase
 import com.example.yakallim.domain.usecase.ObserveProgressUseCase
 import com.example.yakallim.domain.usecase.GetDetailAlarmUseCase
-import com.example.yakallim.domain.model.OcrJobStatus
+import com.example.yakallim.domain.model.JobStatus
 import com.example.yakallim.domain.model.Alarm
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -174,7 +174,7 @@ class OcrViewModel @Inject constructor(
                     analysisResult = null,
                     cardExpansionMap = emptyMap(),
                     progress = OcrProgress(
-                        jobStatus = OcrJobStatus.ENQUEUED,
+                        jobStatus = JobStatus.ENQUEUED,
                         percent = 3,
                         message = context.getString(R.string.ocr_status_uploading),
                         isSseActive = true
@@ -232,7 +232,7 @@ class OcrViewModel @Inject constructor(
                     }
                     if (progress.isFinished) {
                         isOcrCompleted = true
-                        if (progress.jobStatus == OcrJobStatus.COMPLETED) {
+                        if (progress.jobStatus == JobStatus.COMPLETED) {
                             fetchAnalysisResult(jobId)
                         } else {
                             _uiState.update {
@@ -271,7 +271,7 @@ class OcrViewModel @Inject constructor(
                     return@launch
                 }
 
-                if (pushMessage.status == OcrJobStatus.COMPLETED) {
+                if (pushMessage.status == JobStatus.COMPLETED) {
                     fetchAnalysisResult(jobId)
                 } else {
                     _uiState.update {

@@ -3,7 +3,7 @@ package com.example.yakallim.ui.ocr
 import android.graphics.Bitmap
 import android.net.Uri
 import com.example.yakallim.domain.model.Prescription
-import com.example.yakallim.domain.model.OcrJobStatus
+import com.example.yakallim.domain.model.JobStatus
 import com.example.yakallim.domain.model.Alarm
 
 sealed interface OcrError {
@@ -21,7 +21,7 @@ sealed interface OcrImage {
 }
 
 data class OcrProgress(
-    val jobStatus: OcrJobStatus = OcrJobStatus.ENQUEUED,
+    val jobStatus: JobStatus = JobStatus.ENQUEUED,
     val percent: Int = 0,
     val message: String = "",
     val isSseActive: Boolean = true

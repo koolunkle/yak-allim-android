@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import com.example.yakallim.domain.model.Medicine
+import com.example.yakallim.domain.model.PrescribedMedicine
 import com.example.yakallim.domain.model.Prescription
 import org.junit.Rule
 import org.junit.Test
@@ -23,7 +23,7 @@ class OcrScreenTest {
      * each test focused on the specific [uiState]/[medicines] scenario being verified.
      */
     private fun setOcrScreenContent(
-        medicines: List<Medicine>,
+        medicines: List<PrescribedMedicine>,
         highlightedMedicineName: String? = null
     ) {
         val uiState = OcrUiState(
@@ -61,13 +61,13 @@ class OcrScreenTest {
     @Test
     fun ocrScreen_withDuplicateMedicineNames_shouldNotCrash() {
         val duplicateMedicines = listOf(
-            Medicine(
+            PrescribedMedicine(
                 name = "타이레놀",
                 dosagePerTake = "1",
                 dailyFrequency = 3,
                 durationDays = 3
             ),
-            Medicine(
+            PrescribedMedicine(
                 name = "타이레놀",
                 dosagePerTake = "2",
                 dailyFrequency = 2,
@@ -81,13 +81,13 @@ class OcrScreenTest {
     @Test
     fun ocrScreen_withDuplicateMedicineNames_rendersACardForEveryMedicine() {
         val duplicateMedicines = listOf(
-            Medicine(
+            PrescribedMedicine(
                 name = "타이레놀",
                 dosagePerTake = "1",
                 dailyFrequency = 3,
                 durationDays = 3
             ),
-            Medicine(
+            PrescribedMedicine(
                 name = "타이레놀",
                 dosagePerTake = "2",
                 dailyFrequency = 2,
@@ -107,7 +107,7 @@ class OcrScreenTest {
     @Test
     fun ocrScreen_withThreeMedicinesSharingTheSameName_rendersThreeCards() {
         val triplicateMedicines = List(3) { index ->
-            Medicine(
+            PrescribedMedicine(
                 name = "이지엔6",
                 dosagePerTake = "${index + 1}",
                 dailyFrequency = 2,
@@ -124,13 +124,13 @@ class OcrScreenTest {
     @Test
     fun ocrScreen_withMultipleUnnamedMedicines_shouldNotCrashAndRendersFallbackLabelForEach() {
         val unnamedMedicines = listOf(
-            Medicine(
+            PrescribedMedicine(
                 name = null,
                 dosagePerTake = "1",
                 dailyFrequency = 1,
                 durationDays = 1
             ),
-            Medicine(
+            PrescribedMedicine(
                 name = null,
                 dosagePerTake = "2",
                 dailyFrequency = 2,
@@ -149,13 +149,13 @@ class OcrScreenTest {
     @Test
     fun ocrScreen_withUniqueMedicineNames_rendersEachCardExactlyOnce() {
         val uniqueMedicines = listOf(
-            Medicine(
+            PrescribedMedicine(
                 name = "타이레놀",
                 dosagePerTake = "1",
                 dailyFrequency = 3,
                 durationDays = 3
             ),
-            Medicine(
+            PrescribedMedicine(
                 name = "게보린",
                 dosagePerTake = "2",
                 dailyFrequency = 2,

@@ -1,9 +1,9 @@
 package com.example.yakallim.data.mapper
 
 import com.example.yakallim.data.datasource.remote.dto.OcrResponse
-import com.example.yakallim.domain.model.BoundingPolygon
-import com.example.yakallim.domain.model.Coordinate
-import com.example.yakallim.domain.model.Medicine
+import com.example.yakallim.domain.model.Point
+import com.example.yakallim.domain.model.Polygon
+import com.example.yakallim.domain.model.PrescribedMedicine
 import com.example.yakallim.domain.model.Prescription
 import com.example.yakallim.domain.model.TextBlock
 
@@ -15,15 +15,15 @@ fun OcrResponse.toDomain(): Prescription {
         val matchedTextBlock = textBlocks.find { it.text.contains(prescription.medicineName ?: "", ignoreCase = true) }
         val matchedConfidence = matchedTextBlock?.confidence ?: 1.0f
 
-        Medicine(
+        PrescribedMedicine(
             name = prescription.medicineName,
             dosagePerTake = prescription.dosagePerTake ?: "1",
             dailyFrequency = prescription.dailyFrequency ?: 0,
             durationDays = prescription.durationDays ?: 0,
             isLowConfidence = matchedConfidence < 0.8f,
             bounds = prescription.bounds?.map { polygon ->
-                BoundingPolygon(
-                    polygon.points.map { coordinate -> Coordinate(coordinate.x, coordinate.y) }
+                Polygon(
+                    polygon.points.map { coordinate -> Point(coordinate.x, coordinate.y) }
                 )
             } ?: emptyList()
         )
@@ -33,7 +33,7 @@ fun OcrResponse.toDomain(): Prescription {
         TextBlock(
             text = textBlock.text,
             confidence = textBlock.confidence,
-            bounds = BoundingPolygon(textBlock.bounds.map { Coordinate(it.x, it.y) })
+            bounds = textBlock.bounds.map { Point(it.x, it.y) }
         )
     }
 

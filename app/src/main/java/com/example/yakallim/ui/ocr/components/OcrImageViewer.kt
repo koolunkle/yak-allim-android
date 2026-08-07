@@ -38,7 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.yakallim.R
-import com.example.yakallim.domain.model.Coordinate
+import com.example.yakallim.domain.model.Point
 import com.example.yakallim.domain.model.Prescription
 import com.example.yakallim.ui.ocr.OcrImage
 import com.example.yakallim.ui.theme.Primary
@@ -171,7 +171,7 @@ fun OcrImageViewer(
     }
 }
 
-private fun getScaledRect(coordinates: List<Coordinate>, origW: Int, origH: Int, viewW: Float, viewH: Float): Rect {
+private fun getScaledRect(coordinates: List<Point>, origW: Int, origH: Int, viewW: Float, viewH: Float): Rect {
     val minX = coordinates.minOfOrNull { it.x } ?: 0
     val maxX = coordinates.maxOfOrNull { it.x } ?: 0
     val minY = coordinates.minOfOrNull { it.y } ?: 0

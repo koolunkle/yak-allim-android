@@ -5,7 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.yakallim.domain.model.Medicine
+import com.example.yakallim.domain.model.PrescribedMedicine
 import com.example.yakallim.domain.model.Prescription
 
 @Preview(showBackground = true)
@@ -13,13 +13,13 @@ import com.example.yakallim.domain.model.Prescription
 internal fun OcrScreenContentPreview() {
     MaterialTheme {
         val duplicateMedicines = listOf(
-            Medicine(
+            PrescribedMedicine(
                 name = "타이레놀",
                 dosagePerTake = "1",
                 dailyFrequency = 3,
                 durationDays = 3
             ),
-            Medicine(
+            PrescribedMedicine(
                 name = "타이레놀",
                 dosagePerTake = "2",
                 dailyFrequency = 2,

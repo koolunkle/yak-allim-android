@@ -1,6 +1,6 @@
 package com.example.yakallim.domain.repository
 
-import com.example.yakallim.domain.model.OcrProgress
+import com.example.yakallim.domain.model.Progress
 import com.example.yakallim.domain.model.Prescription
 import kotlinx.coroutines.flow.Flow
 import java.io.File
@@ -12,5 +12,5 @@ interface OcrRepository {
     suspend fun getPendingPrescriptionJobId(): String?
     suspend fun getLastPrescription(): Prescription?
     suspend fun clearLastPrescription()
-    fun observeOcrProgress(jobId: String): Flow<OcrProgress>
+    fun observeOcrProgress(jobId: String): Flow<Progress>
 }

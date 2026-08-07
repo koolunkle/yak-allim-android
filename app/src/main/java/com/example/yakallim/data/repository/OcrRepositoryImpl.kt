@@ -7,7 +7,7 @@ import com.example.yakallim.data.datasource.remote.OcrRemoteDataSource
 import com.example.yakallim.data.datasource.remote.dto.OcrResponse
 import com.example.yakallim.data.infrastructure.image.ImageProcessor
 import com.example.yakallim.data.mapper.toDomain
-import com.example.yakallim.domain.model.OcrProgress
+import com.example.yakallim.domain.model.Progress
 import com.example.yakallim.domain.model.Prescription
 import com.example.yakallim.domain.notification.PushTokenProvider
 import com.example.yakallim.domain.repository.OcrRepository
@@ -117,7 +117,7 @@ class OcrRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun observeOcrProgress(jobId: String): Flow<OcrProgress> {
+    override fun observeOcrProgress(jobId: String): Flow<Progress> {
         return ocrRemoteDataSource.observeOcrProgress(jobId)
     }
 }
