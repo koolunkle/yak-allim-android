@@ -1,5 +1,6 @@
 package com.example.yakallim.data.mapper
 
+import com.example.yakallim.data.datasource.remote.dto.MedicineResponse
 import com.example.yakallim.data.datasource.remote.dto.OcrResponse
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -13,7 +14,7 @@ class OcrMappersTest {
             message = "Success",
             textBlocks = emptyList(),
             medicines = listOf(
-                OcrResponse.MedicineResponse(
+                MedicineResponse(
                     medicineName = "타이레놀",
                     dosagePerTake = null,
                     dailyFrequency = 3,
@@ -36,7 +37,7 @@ class OcrMappersTest {
             message = "Fetched successfully",
             textBlocks = emptyList(),
             medicines = listOf(
-                OcrResponse.MedicineResponse(
+                MedicineResponse(
                     medicineName = "아스피린",
                     dosagePerTake = "2정",
                     dailyFrequency = 2,
