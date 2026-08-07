@@ -27,7 +27,6 @@
     <string name="ocr_btn_image_collapse">전체 축소</string>
 
     <string name="ocr_unit_tablet">정</string>
-    <string name="ocr_unit_capsule">캡슐</string>
     <string name="ocr_unit_times">회</string>
     <string name="ocr_unit_days">일</string>
 
@@ -67,12 +66,9 @@
 
     <string name="alarm_setting_title">%1$s 알람 설정</string>
     <string name="alarm_setting_section_time">알람 시간 설정</string>
-    <string name="alarm_setting_time_index">%1$d회차 알람 시간</string>
     <string name="alarm_setting_time_index_short">%1$d회차</string>
     <string name="alarm_setting_section_sound">알람음 설정</string>
-    <string name="alarm_setting_btn_ringtone">시스템 알람음 선택</string>
     <string name="alarm_setting_btn_ringtone_short">시스템 알람음</string>
-    <string name="alarm_setting_btn_device_audio">기기 내 오디오 선택</string>
     <string name="alarm_setting_btn_device_audio_short">기기 내 오디오</string>
     <string name="alarm_card_registered_detail">복약 알람 안내</string>
     <string name="alarm_card_time_format">시간: %1$s</string>
